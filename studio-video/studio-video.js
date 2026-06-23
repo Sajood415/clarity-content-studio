@@ -103,9 +103,7 @@ var StudioVideo = (function () {
 
   function init(state) {
     state.svFilters = { search: '', platform: 'All', status: 'All', date: 'All' };
-    state.svVideos = DEFAULT_VIDEOS.map(function (v) {
-      return { id: v.id, title: v.title, platform: v.platform, aspect: v.aspect, duration: v.duration, status: v.status, daysAgo: v.daysAgo, views: v.views, motif: v.motif, thumb: v.thumb };
-    });
+    state.svVideos = [];
     state.svToast = null;
     state.svFlow = svFreshFlow();
   }
@@ -140,7 +138,32 @@ var StudioVideo = (function () {
     appState.svFlow.open = true;
     renderContent();
   };
-  window.svFlowExit = function () { appState.svFlow.open = false; renderContent(); };
+  window.svNewVideoFromIntel = function () {
+    appState.svFlow = svFreshFlow();
+    var brief = appState.createBrief || {};
+    var intel = appState.intelligence || {};
+    var fl = appState.svFlow;
+    fl.open = true;
+    fl.seed = brief.message || '';
+    fl.q1 = intel.market ? intel.market.whiteSpace : '';
+    fl.q2 = intel.market ? intel.market.gap : '';
+    fl.q3 = intel.persona ? intel.persona.name + ' — ' + intel.persona.seg : '';
+    fl.q4 = intel.consumer ? intel.consumer.trigger : '';
+    var rec = svFlowRecommend(fl.seed);
+    var p = svFlowPlatform(rec.type);
+    fl.recommend = rec;
+    fl.platform = rec.type;
+    fl.ratio = p.ratio;
+    fl.res = p.res;
+    fl.contentType = 'Live-action film';
+    fl.step = 3;
+    fl.sync = 72;
+    renderContent();
+  };
+  window.svFlowExit = function () {
+    appState.svFlow.open = false;
+    nav('create-home');
+  };
   window.svFlowGoTo = function (p) {
     appState.svFlow.step = p;
     appState.svFlow.sync = p === 0 ? 5 : Math.round((p / 7) * 100);

@@ -183,10 +183,7 @@ var StudioImage = (function () {
       useCase: 'Social post', prompt: '', styles: ['Brand Kit'], persona: 'Maya Holloway',
       brandKitLock: true, reference: false, variation: null, generating: false, reviewTheme: null
     };
-    state.siAssets = DEFAULT_ASSETS.map(function (a) {
-      var t = siGetTheme(a.theme);
-      return Object.assign({}, a, { headline: t.headline, sub: t.sub });
-    });
+    state.siAssets = [];
     state.siEditorRailTab = 'insights';
     state.siEditorAiPrompt = '';
     state.siSelectedLayer = 'headline';
@@ -290,16 +287,17 @@ var StudioImage = (function () {
   window.siStartWizard = function () {
     appState.siSelectedAssetId = null;
     var w = appState.siWizard;
+    var brief = appState.createBrief || {};
     var plat = appState.siPrefs.platform || 'Instagram';
     var fmt = SI_FORMATS[plat] ? SI_FORMATS[plat][0] : SI_FORMATS.Instagram[0];
     w.platform = plat;
     w.format = fmt.id;
     w.aspect = fmt.aspect;
     w.dims = fmt.dims;
-    w.useCase = 'Social post';
-    w.prompt = '';
+    w.useCase = brief.goal || 'Social post';
+    w.prompt = brief.message || '';
     w.styles = [appState.siPrefs.style || 'Brand Kit'];
-    w.persona = appState.siPrefs.persona;
+    w.persona = brief.persona || appState.siPrefs.persona;
     w.brandKitLock = appState.siPrefs.brandKitLock;
     w.reference = false;
     w.variation = null;
@@ -312,7 +310,7 @@ var StudioImage = (function () {
     appState.studioImageWizardStep = 0;
     appState.siSelectedAssetId = null;
     appState.siEditing = false;
-    renderContent();
+    nav('create-home');
   };
   window.siSelectPlatform = function (id) {
     var w = appState.siWizard;
@@ -711,11 +709,11 @@ var StudioImage = (function () {
         + '<div style="display:flex;gap:8px;"><button class="btn btn-outline" onclick="siSaveDraft()">Save Draft</button>'
         + '<button class="btn btn-outline">Schedule ▾ Thu 10am</button>'
         + '<button class="btn btn-primary" style="background:#f59e0b;border-color:#f59e0b;" onclick="siPublish()">Publish Now</button></div></div>'
-      : '<div class="st-wizard-footer"><button class="btn btn-outline" onclick="' + (step === 1 ? 'siBackToLibrary()' : 'siWizardBack()') + '">' + (step === 1 ? '← Back to library' : '← Back') + '</button>'
+      : '<div class="st-wizard-footer"><button class="btn btn-outline" onclick="' + (step === 1 ? 'siBackToLibrary()' : 'siWizardBack()') + '">← Back</button>'
         + (continueLabel ? '<button class="btn btn-primary" style="background:#f59e0b;border-color:#f59e0b;"' + (canContinue ? '' : ' disabled style="opacity:0.4;cursor:not-allowed;background:#f59e0b;border-color:#f59e0b;"') + ' onclick="siWizardContinue()">' + continueLabel + '</button>' : '')
         + '</div>';
     return '<div>'
-      + '<div class="st-wizard-back"><button class="btn btn-ghost btn-sm" onclick="siBackToLibrary()">← My Visuals</button></div>'
+      + '<div class="st-wizard-back"><button class="btn btn-ghost btn-sm" onclick="siBackToLibrary()">← Create</button></div>'
       + renderStepper() + content + footer + '</div>';
   }
 
@@ -930,12 +928,22 @@ var StudioImage = (function () {
     if (appState.siEditing) {
       return '<div class="screen si-screen-editor">' + inner + toast + '</div>';
     }
-    return '<div class="screen">'
-      + '<div class="screen-header"><h1 class="screen-title">Studio — Image</h1><p class="screen-sub">Hearth Bakery · Visual content · Layer canvas + AI generation</p></div>'
-      + inner + toast + '</div>';
+    var header = appState.studioImageWizardStep > 0 ? ''
+      : '<div class="screen-header"><h1 class="screen-title">Studio — Image</h1><p class="screen-sub">Hearth Bakery · Visual content · Layer canvas + AI generation</p></div>';
+    return '<div class="screen">' + header + inner + toast + '</div>';
   }
 
-  return { init: init, screenStudioImage: screenStudioImage };
+  return {
+    init: init,
+    screenStudioImage: screenStudioImage,
+    renderPreview: function (themeId, aspect, headline, editable) {
+      return siRenderArtboard(themeId, aspect || '1:1', null, {
+        headline: headline,
+        editable: !!editable,
+        showHandles: false
+      });
+    }
+  };
 })();
 
 window.screenStudioImage = function () { return StudioImage.screenStudioImage(); };

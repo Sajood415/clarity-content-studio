@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="studio-text/studio-text.css?v=4">
 <link rel="stylesheet" href="studio-image/studio-image.css?v=4">
 <link rel="stylesheet" href="studio-video/studio-video.css?v=3">
-<link rel="stylesheet" href="studio-audio/studio-audio.css?v=1">
+<link rel="stylesheet" href="studio-create/create-flow.css?v=7">
 <style>
 /* Reset & tokens */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -154,6 +154,30 @@ a { text-decoration: none; color: inherit; }
 .audio-ch-num.playing { background: #34d399; color: #fff; }
 .audio-ch-title { flex: 1; font-size: 12px; color: var(--text); }
 .audio-ch-dur { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--muted); }
+
+/* Create home */
+.create-hero { max-width: 960px; margin: 0 auto; }
+.create-status { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 20px; background: rgba(52,211,153,0.1); border: 1px solid rgba(52,211,153,0.3); color: #34d399; font-size: 11px; font-weight: 600; margin-bottom: 16px; }
+.create-status-dot { width: 7px; height: 7px; border-radius: 50%; background: #34d399; animation: create-pulse 2s ease infinite; }
+@keyframes create-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+.create-intel-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+.create-intel-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+.create-intel-val { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.create-intel-sub { font-size: 12px; color: var(--muted); line-height: 1.45; }
+.create-brief-bar { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; margin-bottom: 24px; }
+.create-brief-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-top: 10px; }
+.create-brief-field label { display: block; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 4px; }
+.create-brief-field input, .create-brief-field select { width: 100%; background: var(--card2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 8px 10px; color: var(--text); font-size: 13px; outline: none; }
+.create-modality-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+.create-modality { background: var(--card); border: 2px solid var(--border); border-radius: var(--radius); padding: 20px 14px; text-align: center; cursor: pointer; transition: all 0.2s; }
+.create-modality:hover { border-color: var(--primary); transform: translateY(-2px); }
+.create-modality.selected { border-color: var(--primary); background: var(--primary-dim); }
+.create-modality-icon { font-size: 28px; margin-bottom: 8px; }
+.create-modality-name { font-size: 14px; font-weight: 600; }
+.create-modality-desc { font-size: 11px; color: var(--muted); margin-top: 4px; }
+.create-cta-row { display: flex; align-items: center; gap: 12px; }
+.create-flow-hint { font-size: 12px; color: var(--muted); }
+.create-audio-banner { background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.25); border-radius: var(--radius); padding: 14px 18px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 </style>
 </head>
 <body>
@@ -170,10 +194,32 @@ a { text-decoration: none; color: inherit; }
 <script>
 /* ===================== STATE (no browser storage) ===================== */
 var appState = {
-  screen: 'studio-text'
+  screen: 'create-flow',
+  createBrief: {
+    goal: 'Drive weekend pre-orders',
+    message: 'Sourdough Saturday is back — 72-hour cold ferment, stone-baked, limited batch. Craft over convenience.',
+    persona: 'Maya Holloway',
+    whyNow: 'Seasonal launch · Summer 2026'
+  },
+  intelligence: {
+    brand: 'Hearth Bakery',
+    persona: {
+      name: 'Maya Holloway',
+      seg: 'Local foodie · 28–45 · drives for quality',
+      insight: 'Values authenticity over trends. Responds to process stories and limited-batch urgency.'
+    },
+    market: {
+      whiteSpace: 'Artisan craft vs ghost-kitchen convenience — competitors sell speed, Hearth sells patience.',
+      gap: '68% of food-tech startups shuttered since 2023; artisan bakeries grew 14% CAGR.',
+      trend: 'Slow food · local sourcing · behind-the-scenes content'
+    },
+    consumer: {
+      trigger: 'Fear of missing the batch. Motivator: feeling part of a community, not a transaction.',
+      research: 'Pre-order conversion lifts 34% when ferment process is shown. Peak engagement Sat 8–11am.'
+    }
+  }
 };
 
-/* ===================== NAVIGATION ===================== */
 function nav(screen) {
   appState.screen = screen;
   renderSidebar();
@@ -181,13 +227,10 @@ function nav(screen) {
   try { history.replaceState(null, '', '#/enterprise/' + screen); } catch(e) {}
 }
 
-/* ===================== SIDEBAR ===================== */
 var STUDIO_NAV = [
-  { group: 'Content' },
-  { id: 'studio-text',           icon: '&#9997;', label: 'Studio: Text' },
-  { id: 'studio-image',          icon: '&#128247;', label: 'Studio: Image' },
-  { id: 'studio-video',          icon: '&#127909;', label: 'Studio: Video' },
-  { id: 'studio-audio',          icon: '&#127908;', label: 'Studio: Audio' },
+  { group: 'Content Engine' },
+  { id: 'create-flow', icon: '&#10022;', label: 'Create' },
+  { id: 'library',     icon: '&#128203;', label: 'Library' },
 ];
 
 function renderSidebar() {
@@ -201,105 +244,29 @@ function renderSidebar() {
       html += '<div class="sidebar-group-label">' + item.group + '</div>';
     } else {
       var active = appState.screen === item.id ? ' active' : '';
-      var badge = item.badge ? '<span class="sidebar-badge">' + item.badge + '</span>' : '';
       html += '<div class="sidebar-item' + active + '" onclick="nav(\'' + item.id + '\')">'
-            + '<span class="icon">' + item.icon + '</span>'
-            + item.label + badge
-            + '</div>';
+            + '<span class="icon">' + item.icon + '</span>' + item.label + '</div>';
     }
   });
   document.getElementById('sidebar').innerHTML = html;
 }
 
-/* ===================== CONTENT ROUTER ===================== */
-var STUDIO_SCREEN_IDS = ['studio-text', 'studio-image', 'studio-video', 'studio-audio'];
+var STUDIO_SCREEN_IDS = ['create-flow', 'library', 'history'];
 
 function renderContent() {
   var el = document.getElementById('content');
-  var s = appState.screen;
-  var html;
-  switch (s) {
-    case 'studio-image': html = screenStudioImage(); break;
-    case 'studio-video': html = screenStudioVideo(); break;
-    case 'studio-audio': html = screenStudioAudio(); break;
-    default: html = screenStudioText(); break;
-  }
+  var html = (appState.screen === 'library' || appState.screen === 'history') ? screenLibrary() : screenCreateFlow();
   el.innerHTML = html;
 }
 
-/* ===================== STUDIO — AUDIO ===================== */
-function screenStudioAudio() {
-  var chapters = [
-    {n:1,title:'The craft paradox',dur:'4:12',playing:true},
-    {n:2,title:'72-hour ferment — why it matters',dur:'6:08',playing:false},
-    {n:3,title:'Interview: Millie, loyal customer',dur:'8:44',playing:false},
-    {n:4,title:'Data segment: artisan retention',dur:'5:22',playing:false},
-    {n:5,title:'Closing: community over volume',dur:'3:15',playing:false},
-  ];
-
-  var deterministicHeights = [30,45,60,38,72,55,80,42,65,50,78,35,60,48,70,38,55,68,42,75,52,88,40,65,48,73,35,60,50,80,38,68,45,72,55,82,40,65,48,78,35,60,50,75,42,68,38,70,55,85,40,62,48,73,35,65,50,80,38,68,45,72,55,82,40,60,48,75,35,65,50,80,38,68,45,72,55,82,40,62];
-
-  return '<div class="screen">'
-    + '<div class="screen-header flex-between"><div><h1 class="screen-title">Studio — Audio</h1><p class="screen-sub">Ep 13: Community-first growth · Podcast · 27:41 · Maker draft v1</p></div>'
-    + '<div style="display:flex;gap:8px;"><button class="btn btn-outline btn-sm">Export MP3</button><button class="btn btn-outline btn-sm">Distribute</button><button class="btn btn-primary btn-sm">Submit for review</button></div></div>'
-    + '<div style="display:grid;grid-template-columns:1fr 280px;gap:16px;">'
-    + '<div>'
-    + '<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;">'
-    + '<div style="font-size:14px;font-weight:600;margin-bottom:2px;">Ep 13: Community-first growth</div>'
-    + '<div style="font-size:11px;color:var(--muted);margin-bottom:14px;">Hearth Bakery Podcast · 27:41</div>'
-    + '<div style="height:70px;display:flex;align-items:center;gap:1px;background:var(--card2);border-radius:6px;padding:8px;margin-bottom:10px;overflow:hidden;">'
-    + deterministicHeights.map(function(h,i){ return '<div style="flex:1;border-radius:1px;background:'+(i<30?'var(--primary)':'rgba(154,160,180,0.3)')+';height:'+h+'%;transition:height 0.1s;"></div>'; }).join('')
-    + '</div>'
-    + '<div style="display:flex;align-items:center;gap:8px;">'
-    + ['⏮','⏪','⏸','⏩','⏭'].map(function(b){ return '<div style="width:30px;height:30px;border-radius:6px;background:var(--card2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;color:var(--muted);">'+b+'</div>'; }).join('')
-    + '<div style="flex:1;height:4px;background:var(--border);border-radius:2px;"><div style="width:38%;height:100%;background:var(--primary);border-radius:2px;"></div></div>'
-    + '<div style="font-family:\'DM Mono\',monospace;font-size:11px;color:var(--muted);">10:33 / 27:41</div>'
-    + '</div>'
-    + '</div>'
-    + '<div class="label" style="margin-bottom:8px;">Chapters</div>'
-    + '<div class="audio-chapter-list">'
-    + chapters.map(function(c){
-        return '<div class="audio-chapter'+(c.playing?' playing':'')+'">'
-          + '<div class="audio-ch-num'+(c.playing?' playing':'')+'">'+c.n+'</div>'
-          + '<div class="audio-ch-title">'+c.title+'</div>'
-          + '<div class="audio-ch-dur">'+c.dur+'</div>'
-          + '</div>';
-      }).join('')
-    + '</div>'
-    + '</div>'
-    + '<div style="display:flex;flex-direction:column;gap:10px;">'
-    + '<div class="card" style="padding:14px;"><div class="label" style="margin-bottom:10px;">Generate</div>'
-    + '<button class="btn btn-primary" style="width:100%;margin-bottom:6px;">✦ AI voiceover</button>'
-    + '<button class="btn btn-outline" style="width:100%;margin-bottom:6px;">✦ Background music</button>'
-    + '<button class="btn btn-outline" style="width:100%;margin-bottom:6px;">✦ Auto-transcribe</button>'
-    + '<button class="btn btn-outline" style="width:100%;">✦ Audiogram clips</button>'
-    + '</div>'
-    + '<div class="card" style="padding:14px;"><div class="label" style="margin-bottom:8px;">Distribution</div>'
-    + [['Spotify','Connected','#1DB954'],['Apple Podcasts','Connected','#872EC4'],['YouTube Podcasts','Pending','#f59e0b'],['RSS Feed','Active','#f87171']].map(function(d){ return '<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);"><div style="font-size:12px;font-weight:500;">'+d[0]+'</div><div style="font-size:10px;font-weight:700;color:'+d[2]+';">'+d[1]+'</div></div>'; }).join('')
-    + '</div>'
-    + '<div class="card" style="padding:14px;"><div class="label" style="margin-bottom:8px;">Persona Fit</div>'
-    + '<div class="pf-breakdown">'
-    + [['Resonance','88'],['Voice Fit','85'],['Format Fit','82'],['Timing Fit','80']].map(function(d){ return '<div class="pf-dim"><div class="pf-dim-name">'+d[0]+'</div><div class="pf-dim-bar"><div class="pf-dim-fill" style="width:'+d[1]+'%;"></div></div><div class="pf-dim-val">'+d[1]+'</div></div>'; }).join('')
-    + '</div><div style="margin-top:8px;text-align:center;"><span class="pf-chip green"><span class="pf-chip-dot"></span>84 / 100</span></div>'
-    + '</div>'
-    + '<div class="card" style="padding:14px;"><div class="label" style="margin-bottom:10px;">Approvals</div>'
-    + '<div class="approval-rail">'
-    + [['Brand Review','Auto-cleared','done'],['Audio QA','Kira M.','done'],['Publish','Scheduled Fri','active']].map(function(a){ return '<div class="approval-step '+a[2]+'"><div class="approval-icon '+a[2]+'">'+(a[2]==='done'?'✓':a[2]==='active'?'→':'○')+'</div><div class="approval-meta"><div class="approval-name">'+a[0]+'</div><div class="approval-who">'+a[1]+'</div></div></div>'; }).join('')
-    + '</div>'
-    + '</div>'
-    + '</div>'
-    + '</div>'
-    + '</div>';
-}
-
-/* ===================== INIT ===================== */
 function init() {
   var h = window.location.hash;
   if (h && h.startsWith('#/')) {
     var parts = h.slice(2).split('/');
     if (parts.length >= 2) {
       var screen = parts[1];
-      if (parts[0] === 'smb' || STUDIO_SCREEN_IDS.indexOf(screen) === -1) screen = 'studio-text';
+      if (screen === 'history') screen = 'library';
+      if (parts[0] === 'smb' || STUDIO_SCREEN_IDS.indexOf(screen) === -1) screen = 'create-flow';
       nav(screen);
       return;
     }
@@ -310,11 +277,11 @@ function init() {
 window.addEventListener('load', init);
 
 </script>
-<script src="studio-text/studio-text.js?v=6"></script>
-<script src="studio-image/studio-image.js?v=5"></script>
-<script src="studio-video/studio-video.js?v=3"></script>
-<script src="studio-audio/studio-audio.js?v=1"></script>
-<script>StudioText.init(appState); StudioImage.init(appState); StudioVideo.init(appState); StudioAudio.init(appState);</script>
+<script src="studio-create/create-flow.js?v=8"></script>
+<script src="studio-text/studio-text.js?v=8"></script>
+<script src="studio-image/studio-image.js?v=7"></script>
+<script src="studio-video/studio-video.js?v=5"></script>
+<script>CreateFlow.init(appState); StudioText.init(appState); StudioImage.init(appState); StudioVideo.init(appState);</script>
 
 <!-- Clarity Content Studio — Text, Image, Video, Audio -->
 

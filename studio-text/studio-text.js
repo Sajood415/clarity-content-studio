@@ -57,9 +57,7 @@ var StudioText = (function () {
       ctaEnabled: false, cta: 'Learn more', hashtagsAuto: true, customHashtags: '',
       variation: null, generating: false, reviewText: ''
     };
-    state.stPosts = DEFAULT_POSTS.map(function (p) {
-      return { id: p.id, platform: p.platform, icon: p.icon, format: p.format, preview: p.preview, body: p.body, status: p.status, pf: p.pf, date: p.date };
-    });
+    state.stPosts = [];
     state.stEditorRailTab = 'insights';
     state.stEditorAiPrompt = '';
     state.stLiveMetrics = null;
@@ -171,12 +169,13 @@ var StudioText = (function () {
   window.stStartWizard = function () {
     appState.stSelectedPostId = null;
     var w = appState.stWizard;
-    w.platform = appState.stPrefs.platform || null;
-    w.format = w.platform && ST_FORMATS[w.platform] ? ST_FORMATS[w.platform][0].id : null;
-    w.topic = 'Thought leadership';
-    w.prompt = '';
+    var brief = appState.createBrief || {};
+    w.platform = appState.stPrefs.platform || 'LinkedIn';
+    w.format = ST_FORMATS[w.platform] ? ST_FORMATS[w.platform][0].id : null;
+    w.topic = brief.goal || 'Thought leadership';
+    w.prompt = brief.message || '';
     w.tones = appState.stPrefs.tones.slice();
-    w.persona = appState.stPrefs.persona;
+    w.persona = brief.persona || appState.stPrefs.persona;
     w.ctaEnabled = false;
     w.cta = 'Learn more';
     w.hashtagsAuto = true;
@@ -191,7 +190,7 @@ var StudioText = (function () {
     appState.studioTextWizardStep = 0;
     appState.stSelectedPostId = null;
     appState.stEditing = false;
-    renderContent();
+    nav('create-home');
   };
   window.stSelectPlatform = function (id) {
     appState.stWizard.platform = id;
@@ -557,11 +556,11 @@ var StudioText = (function () {
         + '<div style="display:flex;gap:8px;"><button class="btn btn-outline" onclick="stSaveDraft()">Save Draft</button>'
         + '<button class="btn btn-outline">Schedule ▾ Thu 10am</button>'
         + '<button class="btn btn-primary" onclick="stPublish()">Publish Now</button></div></div>'
-      : '<div class="st-wizard-footer"><button class="btn btn-outline" onclick="' + (step === 1 ? 'stBackToLibrary()' : 'stWizardBack()') + '">' + (step === 1 ? '← Back to library' : '← Back') + '</button>'
+      : '<div class="st-wizard-footer"><button class="btn btn-outline" onclick="' + (step === 1 ? 'stBackToLibrary()' : 'stWizardBack()') + '">' + (step === 1 ? '← Back' : '← Back') + '</button>'
         + (continueLabel ? '<button class="btn btn-primary"' + (canContinue ? '' : ' disabled style="opacity:0.4;cursor:not-allowed;"') + ' onclick="stWizardContinue()">' + continueLabel + '</button>' : '')
         + '</div>';
     return '<div>'
-      + '<div class="st-wizard-back"><button class="btn btn-ghost btn-sm" onclick="stBackToLibrary()">← My Posts</button></div>'
+      + '<div class="st-wizard-back"><button class="btn btn-ghost btn-sm" onclick="stBackToLibrary()">← Create</button></div>'
       + renderStudioTextStepper()
       + stepContent
       + footer
@@ -759,11 +758,9 @@ var StudioText = (function () {
     if (appState.stEditing) {
       return '<div class="screen st-screen-editor">' + inner + toast + '</div>';
     }
-    return '<div class="screen">'
-      + '<div class="screen-header"><h1 class="screen-title">Studio — Text</h1><p class="screen-sub">Hearth Bakery · Social text content · Maker agent</p></div>'
-      + inner
-      + toast
-      + '</div>';
+    var header = appState.studioTextWizardStep > 0 ? ''
+      : '<div class="screen-header"><h1 class="screen-title">Studio — Text</h1><p class="screen-sub">Hearth Bakery · Social text content · Maker agent</p></div>';
+    return '<div class="screen">' + header + inner + toast + '</div>';
   }
 
   return { init: init, screenStudioText: screenStudioText };
