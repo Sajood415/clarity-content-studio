@@ -131,6 +131,83 @@ var CampaignFlow = (function () {
   ];
   CP_SAMPLE_CAMPAIGNS.forEach(function (c) { c.totalAssets = c.assets.length; });
 
+  var CP_SAMPLE_INTELLIGENCE = {
+    brand: 'Hearth Bakery',
+    persona: {
+      name: 'Maya Holloway',
+      seg: 'Local foodie · 28–45 · drives for quality',
+      insight: 'Values authenticity over trends. Responds to process stories and limited-batch urgency.'
+    },
+    market: {
+      whiteSpace: 'Artisan craft vs ghost-kitchen convenience — competitors sell speed, Hearth sells patience.',
+      gap: '68% of food-tech startups shuttered since 2023; artisan bakeries grew 14% CAGR.',
+      trend: 'Slow food · local sourcing · behind-the-scenes content'
+    },
+    consumer: {
+      trigger: 'Fear of missing the batch. Motivator: feeling part of a community, not a transaction.',
+      research: 'Pre-order conversion lifts 34% when ferment process is shown. Peak engagement Sat 8–11am.'
+    }
+  };
+
+  function cpHasIntelligence() {
+    var intel = appState.intelligence;
+    if (!intel) return false;
+    if (!intel.persona || !intel.persona.name) return false;
+    if (!intel.market || !intel.market.whiteSpace) return false;
+    if (!intel.consumer || !intel.consumer.trigger) return false;
+    return true;
+  }
+  function cpSampleIntelligence() {
+    return JSON.parse(JSON.stringify(CP_SAMPLE_INTELLIGENCE));
+  }
+  function cpBriefFromIntelligence(state) {
+    var intel = state.intelligence || {};
+    var baseBrief = state.createBrief || {};
+    var persona = intel.persona || {};
+    var personaLabel = persona.name
+      ? persona.name + (persona.seg ? ' — ' + persona.seg : '')
+      : (baseBrief.persona || 'Maya Holloway');
+    return {
+      objective: baseBrief.goal || 'Drive weekend pre-orders',
+      persona: personaLabel,
+      message: baseBrief.message || '',
+      proof: baseBrief.proof || (intel.market && intel.market.gap) || '72-hour cold ferment, local flour, limited 120-loaf batch.',
+      cta: baseBrief.cta || 'Pre-order now — closes Friday at 6 PM.'
+    };
+  }
+  function cpHandoffBlock(intel, brief, objective) {
+    return '<div class="cf-handoff">'
+      + '<div class="cf-handoff-head">'
+      + '<div><div class="cf-handoff-eyebrow">R&D and strategy complete</div><div class="cf-handoff-title">Everything is ready — plan this campaign</div></div>'
+      + '<span class="pill pill-green">Intelligence Synced ✓</span>'
+      + '</div>'
+      + '<div class="cf-handoff-grid">'
+      + '<div class="cf-handoff-item"><span>Persona locked</span><strong>' + intel.persona.name + '</strong><em>' + intel.persona.seg + '</em></div>'
+      + '<div class="cf-handoff-item"><span>Market signal</span><strong>' + intel.market.whiteSpace + '</strong><em>' + intel.market.gap + '</em></div>'
+      + '<div class="cf-handoff-item"><span>Consumer trigger</span><strong>' + intel.consumer.trigger + '</strong><em>Campaign goal: ' + (objective || brief.goal || 'Not set') + '</em></div>'
+      + '</div>'
+      + '<div class="cf-handoff-foot">'
+      + '<span class="pill pill-muted">Strategy synced to campaign</span>'
+      + '<span class="pill pill-muted">Persona applied across channels</span>'
+      + '<span class="pill pill-muted">Brief pre-seeded from research</span>'
+      + '</div>'
+      + '</div>';
+  }
+  function cpIntelGateBlock() {
+    return '<div class="cp-step-title">Campaign setup</div>'
+      + '<div class="cp-step-sub">Intelligence context is required before campaign planning can begin.</div>'
+      + '<div class="card cp-intel-gate">'
+      + '<div class="cp-intel-gate-title">Research is required before content generation</div>'
+      + '<p class="cp-intel-gate-copy">Please complete Intelligence setup first so the content engine can generate output for the right audience and business goal.</p>'
+      + '<div class="cp-intel-gate-actions">'
+      + '<button class="btn btn-primary" onclick="campaignStartIntelligenceSetup()">Start Intelligence Setup</button>'
+      + '<button class="btn btn-outline" onclick="campaignUseSampleIntelligence()">Use Sample Intelligence for Demo</button>'
+      + '</div></div>';
+  }
+  function cpApplyBriefFromIntelligence() {
+    cpFlow().brief.shared = cpBriefFromIntelligence(appState);
+  }
+
   function cpFlow() { return appState.campaignFlow; }
   function cpTodayStr() {
     var d = new Date();
@@ -154,7 +231,6 @@ var CampaignFlow = (function () {
     return mon + ' ' + d.getDate();
   }
   function cpFreshFlow(state) {
-    var baseBrief = state.createBrief || {};
     return {
       step: 1,
       name: 'Summer Launch Sprint',
@@ -165,13 +241,7 @@ var CampaignFlow = (function () {
       assetMix: [],
       mixInitialized: false,
       brief: {
-        shared: {
-          objective: baseBrief.goal || 'Drive weekend pre-orders',
-          persona: baseBrief.persona || 'Maya Holloway',
-          message: baseBrief.message || '',
-          proof: baseBrief.proof || '72-hour cold ferment, local flour, limited 120-loaf batch.',
-          cta: baseBrief.cta || 'Pre-order now — closes Friday at 6 PM.'
-        },
+        shared: cpBriefFromIntelligence(state),
         overrides: {}
       },
       batchGenerating: false,
@@ -229,8 +299,12 @@ var CampaignFlow = (function () {
   }
 
   function cpStepGoalTiming() {
+    if (!cpHasIntelligence()) return cpIntelGateBlock();
     var f = cpFlow();
-    return '<div class="cp-step-title">Campaign setup</div>'
+    var intel = appState.intelligence;
+    var brief = appState.createBrief || {};
+    return cpHandoffBlock(intel, brief, f.objective)
+      + '<div class="cp-step-title">Campaign setup</div>'
       + '<div class="cp-step-sub">Define goal and timing for this campaign.</div>'
       + '<div class="cp-form">'
       + '<div class="cp-field"><label>Campaign name</label><input value="' + f.name + '" oninput="campaignSetField(\'name\',this.value)"></div>'
@@ -751,6 +825,7 @@ var CampaignFlow = (function () {
   }
 
   function canContinue() {
+    if (!cpHasIntelligence()) return false;
     var f = cpFlow();
     if (f.step === 1) return !!f.name && !!f.objective && !!f.startDate && !!f.endDate;
     if (f.step === 2) return f.platforms.length > 0;
@@ -787,6 +862,14 @@ var CampaignFlow = (function () {
     appState.campaignUI.mode = 'flow';
     appState.campaignUI.selectedId = null;
     renderContent();
+  };
+  window.campaignUseSampleIntelligence = function () {
+    appState.intelligence = cpSampleIntelligence();
+    cpApplyBriefFromIntelligence();
+    renderContent();
+  };
+  window.campaignStartIntelligenceSetup = function () {
+    alert('Intelligence setup is outside this mockup. Use "Use Sample Intelligence for Demo" to load research context and continue.');
   };
   window.campaignOpenDetail = function (id) {
     appState.campaignUI.mode = 'detail';
@@ -919,7 +1002,9 @@ var CampaignFlow = (function () {
       : cpStepPublish();
     return '<div class="cf-screen">'
       + '<div class="cf-topbar"><div class="cf-brand">Clarity <span>Content Studio</span></div>'
-      + '<div class="cf-topbar-right"><span class="create-status"><span class="create-status-dot"></span> Campaign Builder</span></div></div>'
+      + '<div class="cf-topbar-right"><span class="create-status"><span class="create-status-dot"></span> '
+      + (cpHasIntelligence() && appState.intelligence.brand ? appState.intelligence.brand + ' · ' : '')
+      + 'Campaign Builder</span></div></div>'
       + '<div class="cp-body"><div class="cp-main">' + cpStepper() + content + '</div></div>'
       + '<div class="cf-footer">'
       + '<button class="btn btn-outline"' + (f.step <= 1 ? ' disabled style="opacity:0.35;"' : '') + ' onclick="campaignBack()">← Back</button>'
