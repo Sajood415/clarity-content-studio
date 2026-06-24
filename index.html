@@ -11,6 +11,7 @@
 <link rel="stylesheet" href="studio-image/studio-image.css?v=4">
 <link rel="stylesheet" href="studio-video/studio-video.css?v=3">
 <link rel="stylesheet" href="studio-create/create-flow.css?v=7">
+<link rel="stylesheet" href="studio-campaign/campaign-flow.css?v=6">
 <style>
 /* Reset & tokens */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -230,6 +231,7 @@ function nav(screen) {
 var STUDIO_NAV = [
   { group: 'Content Engine' },
   { id: 'create-flow', icon: '&#10022;', label: 'Create' },
+  { id: 'campaign',    icon: '&#128640;', label: 'Campaign' },
   { id: 'library',     icon: '&#128203;', label: 'Library' },
 ];
 
@@ -251,11 +253,13 @@ function renderSidebar() {
   document.getElementById('sidebar').innerHTML = html;
 }
 
-var STUDIO_SCREEN_IDS = ['create-flow', 'library', 'history'];
+var STUDIO_SCREEN_IDS = ['create-flow', 'campaign', 'library', 'history'];
 
 function renderContent() {
   var el = document.getElementById('content');
-  var html = (appState.screen === 'library' || appState.screen === 'history') ? screenLibrary() : screenCreateFlow();
+  var html = (appState.screen === 'library' || appState.screen === 'history') ? screenLibrary()
+    : appState.screen === 'campaign' ? screenCampaign()
+    : screenCreateFlow();
   el.innerHTML = html;
 }
 
@@ -278,10 +282,11 @@ window.addEventListener('load', init);
 
 </script>
 <script src="studio-create/create-flow.js?v=8"></script>
+<script src="studio-campaign/campaign-flow.js?v=8"></script>
 <script src="studio-text/studio-text.js?v=8"></script>
 <script src="studio-image/studio-image.js?v=7"></script>
 <script src="studio-video/studio-video.js?v=5"></script>
-<script>CreateFlow.init(appState); StudioText.init(appState); StudioImage.init(appState); StudioVideo.init(appState);</script>
+<script>CreateFlow.init(appState); CampaignFlow.init(appState); StudioText.init(appState); StudioImage.init(appState); StudioVideo.init(appState);</script>
 
 <!-- Clarity Content Studio — Text, Image, Video, Audio -->
 
