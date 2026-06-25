@@ -308,7 +308,7 @@ var CampaignFlow = (function () {
   function init(state) {
     if (!state.campaigns) state.campaigns = [];
     state.campaignUI = { mode: 'home', selectedId: null };
-    if (typeof state.cpSidebarOpen === 'undefined') state.cpSidebarOpen = true;
+    if (typeof state.cpSidebarOpen === 'undefined') state.cpSidebarOpen = false;
     state.campaignFlow = cpFreshFlow(state);
   }
 
@@ -403,7 +403,8 @@ var CampaignFlow = (function () {
     } else if (f.claraSuggested) {
       claraIndicator = '<div class="clara-ready"><span>\u2736</span> Clara pre-filled Platforms &amp; Asset Mix \u2014 tweak freely on the next steps.</div>';
     }
-    return '<div class="cp-step-title">Campaign setup</div>'
+    return '<div class="cp-setup-center">'
+      + '<div class="cp-step-title">Campaign setup</div>'
       + '<div class="cp-step-sub">Define goal and timing for this campaign.</div>'
       + '<div class="cp-form">'
       + '<div class="cp-field"><label>Campaign name</label><input value="' + f.name + '" onblur="campaignNameBlur(this.value)"></div>'
@@ -415,6 +416,7 @@ var CampaignFlow = (function () {
       + '<div class="cp-field"><label>End date</label><input type="date" value="' + f.endDate + '" onchange="campaignSetField(\'endDate\',this.value)"></div>'
       + '</div>'
       + claraIndicator
+      + '</div>'
       + '</div>';
   }
 
@@ -1419,7 +1421,7 @@ var CampaignFlow = (function () {
       : f.step === 6 ? cpStepEdit()
       : cpStepPublish();
     return '<div class="cf-screen">'
-      + '<div class="cf-topbar"><div class="cf-brand">Clarity <span>Content Studio</span></div>'
+      + '<div class="cf-topbar"><div class="cf-brand">Clarity <span>Campaign</span></div>'
       + '<div class="cf-topbar-right"><span class="create-status"><span class="create-status-dot"></span> '
       + (cpHasIntelligence() && appState.intelligence.brand ? appState.intelligence.brand + ' · ' : '')
       + 'Campaign Builder</span>'

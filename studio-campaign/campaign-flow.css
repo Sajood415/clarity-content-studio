@@ -30,6 +30,13 @@
 .cp-step-title { font-family: 'Cormorant Garamond', serif; font-size: 24px; font-weight: 600; margin-bottom: 6px; }
 .cp-step-sub { font-size: 13px; color: var(--muted); margin-bottom: 18px; }
 .cp-form { display: flex; flex-direction: column; gap: 12px; max-width: 720px; }
+/* Centered Step 1 setup */
+.cp-setup-center {
+  max-width: 520px; margin: 0 auto; padding-top: 32px; text-align: center;
+}
+.cp-setup-center .cp-step-title { font-size: 34px; }
+.cp-setup-center .cp-step-sub { margin-bottom: 28px; }
+.cp-setup-center .cp-form { max-width: none; text-align: left; }
 .cp-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .cp-field label { display: block; font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 5px; }
 .cp-field input, .cp-field select, .cp-field textarea {
