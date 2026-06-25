@@ -24,8 +24,19 @@ var CampaignFlow = (function () {
 
   function cpInitLiveStat(id) {
     if (!_cpLiveStats[id]) {
-      _cpLiveStats[id] = { views: 180 + Math.floor(Math.random() * 140) };
+      _cpLiveStats[id] = {
+        views: 180 + Math.floor(Math.random() * 140),
+        comments: 6 + Math.floor(Math.random() * 18),
+        reactions: 24 + Math.floor(Math.random() * 60)
+      };
     }
+  }
+  function cpLiveStatInner(id) {
+    var s = _cpLiveStats[id];
+    if (!s) return '<span class="cp-live-metric">\u2014</span>';
+    return '<span class="cp-live-metric">\uD83D\uDC41 ' + s.views + ' views</span>'
+      + '<span class="cp-live-metric">\uD83D\uDCAC ' + s.comments + ' comments</span>'
+      + '<span class="cp-live-metric">\u2764\uFE0F ' + s.reactions + ' reactions</span>';
   }
   function cpStartLiveInterval() {
     if (_cpLiveInterval) return;
@@ -39,9 +50,12 @@ var CampaignFlow = (function () {
       all.forEach(function (c) {
         if (cpCampaignStatusForCard(c) !== 'Live') return;
         cpInitLiveStat(c.id);
-        _cpLiveStats[c.id].views += Math.floor(Math.random() * 7) + 1;
+        var s = _cpLiveStats[c.id];
+        s.views += Math.floor(Math.random() * 7) + 1;
+        if (Math.random() < 0.55) s.comments += Math.floor(Math.random() * 2) + 1;
+        if (Math.random() < 0.65) s.reactions += Math.floor(Math.random() * 3) + 1;
         var el = document.getElementById('cp-live-stat-' + c.id);
-        if (el) el.textContent = _cpLiveStats[c.id].views + ' views today';
+        if (el) el.innerHTML = cpLiveStatInner(c.id);
       });
     }, 3000);
   }
@@ -1290,7 +1304,7 @@ var CampaignFlow = (function () {
       + '<div class="cp-detail-kpis cp-detail-kpis-wide">'
       + '<div class="card"><div class="label">Status</div>'
       + '<div class="cp-kpi-val">' + (status === 'Live' ? '<span class="cp-live-dot"></span>' : '') + status + '</div>'
-      + (status === 'Live' ? '<div class="cp-live-stat-inline" style="margin-top:6px;"><span id="cp-live-stat-' + c.id + '">' + (_cpLiveStats[c.id] ? _cpLiveStats[c.id].views : '—') + ' views today</span></div>' : '')
+      + (status === 'Live' ? '<div class="cp-live-stat-inline" id="cp-live-stat-' + c.id + '" style="margin-top:6px;">' + cpLiveStatInner(c.id) + '</div>' : '')
       + '</div>'
       + '<div class="card"><div class="label">Total assets</div><div class="cp-kpi-val">' + c.totalAssets + '</div></div>'
       + '<div class="card"><div class="label">Approved</div><div class="cp-kpi-val">' + approvedCount + '</div></div>'
@@ -1329,10 +1343,11 @@ var CampaignFlow = (function () {
             var isLive = c.status === 'Live';
             var statusPill = '<span class="pill ' + (isLive ? 'pill-green' : c.status === 'Scheduled' ? 'pill-indigo' : 'pill-muted') + '">'
               + (isLive ? '<span class="cp-live-dot"></span>' : '') + c.status + '</span>';
-            var liveLine = isLive ? '<div class="cp-live-stat"><span id="cp-live-stat-' + c.id + '">' + (_cpLiveStats[c.id] ? _cpLiveStats[c.id].views : '—') + ' views today</span></div>' : '';
+            var liveLine = isLive ? '<div class="cp-live-stat" id="cp-live-stat-' + c.id + '">' + cpLiveStatInner(c.id) + '</div>' : '';
             return '<div class="cp-campaign-card" onclick="campaignOpenDetail(\'' + c.id + '\')">'
               + '<div class="flex-between"><div class="cp-campaign-name">' + c.name + '</div>' + statusPill + '</div>'
-              + '<div class="cp-campaign-meta">' + c.goal + ' · ' + cpFmtDate(c.startDate) + ' to ' + cpFmtDate(c.endDate) + '</div>'
+              + '<div class="cp-campaign-meta">' + c.goal + '</div>'
+              + '<div class="cp-campaign-dates">\uD83D\uDCC5 ' + cpFmtDate(c.startDate) + ' \u2192 ' + cpFmtDate(c.endDate) + '</div>'
               + '<div class="cp-campaign-meta">' + c.totalAssets + ' assets · ' + cpCampaignPlatforms(c).join(', ') + '</div>'
               + liveLine
               + '</div>';
@@ -1347,10 +1362,11 @@ var CampaignFlow = (function () {
           var isLive = status === 'Live';
           var statusPill = '<span class="pill ' + (status === 'Done' ? 'pill-muted' : isLive ? 'pill-green' : 'pill-indigo') + '">'
             + (isLive ? '<span class="cp-live-dot"></span>' : '') + status + '</span>';
-          var liveLine = isLive ? '<div class="cp-live-stat"><span id="cp-live-stat-' + c.id + '">' + (_cpLiveStats[c.id] ? _cpLiveStats[c.id].views : '—') + ' views today</span></div>' : '';
+          var liveLine = isLive ? '<div class="cp-live-stat" id="cp-live-stat-' + c.id + '">' + cpLiveStatInner(c.id) + '</div>' : '';
           return '<div class="cp-campaign-card" onclick="campaignOpenDetail(\'' + c.id + '\')">'
             + '<div class="flex-between"><div class="cp-campaign-name">' + c.name + '</div>' + statusPill + '</div>'
-            + '<div class="cp-campaign-meta">' + c.goal + ' · ' + cpFmtDate(c.startDate) + ' to ' + cpFmtDate(c.endDate) + '</div>'
+            + '<div class="cp-campaign-meta">' + c.goal + '</div>'
+            + '<div class="cp-campaign-dates">\uD83D\uDCC5 ' + cpFmtDate(c.startDate) + ' \u2192 ' + cpFmtDate(c.endDate) + '</div>'
             + '<div class="cp-campaign-meta">' + c.totalAssets + ' assets' + (cpCampaignPlatforms(c).length ? ' · ' + cpCampaignPlatforms(c).join(', ') : '') + '</div>'
             + liveLine
             + '</div>';
@@ -1422,9 +1438,7 @@ var CampaignFlow = (function () {
       : cpStepPublish();
     return '<div class="cf-screen">'
       + '<div class="cf-topbar"><div class="cf-brand">Clarity <span>Campaign</span></div>'
-      + '<div class="cf-topbar-right"><span class="create-status"><span class="create-status-dot"></span> '
-      + (cpHasIntelligence() && appState.intelligence.brand ? appState.intelligence.brand + ' · ' : '')
-      + 'Campaign Builder</span>'
+      + '<div class="cf-topbar-right">'
       + '<button class="cp-dev-btn" onclick="campaignResetIntelligence()" title="Dev only — clears intelligence for testing">&#9881; Reset Intel</button>'
       + '</div></div>'
       + '<div class="cf-body cp-flow-body' + (appState.cpSidebarOpen ? '' : ' cf-sidebar-collapsed') + '"><div class="cp-main">' + cpStepper() + content + '</div>' + cpIntelRail() + '</div>'

@@ -154,7 +154,7 @@
 /* Live campaign pulse indicator */
 .cp-live-dot {
   display: inline-block; width: 7px; height: 7px; border-radius: 50%;
-  background: #34d399; flex-shrink: 0; vertical-align: middle; margin-right: 4px;
+  background: #34d399; flex-shrink: 0; vertical-align: middle; margin-right: 7px;
   animation: cp-live-pulse 1.6s ease-in-out infinite;
 }
 @keyframes cp-live-pulse {
@@ -162,12 +162,17 @@
   50%       { opacity: 0.85; transform: scale(1.25); box-shadow: 0 0 0 5px rgba(52,211,153,0); }
 }
 .cp-live-stat {
-  display: inline-flex; align-items: center; gap: 5px; margin-top: 7px;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin-top: 9px;
   font-size: 11px; color: #34d399; font-family: 'DM Mono', monospace;
 }
 .cp-live-stat-inline {
-  display: inline-flex; align-items: center; gap: 5px;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px;
   font-size: 11px; color: #34d399; font-family: 'DM Mono', monospace;
+}
+.cp-live-metric { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.cp-campaign-dates {
+  display: inline-flex; align-items: center; gap: 6px; margin-top: 4px;
+  font-size: 12px; color: var(--text); font-weight: 500;
 }
 
 /* Campaign health ring card */

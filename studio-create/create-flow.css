@@ -68,6 +68,29 @@
 .cf-mod-desc { font-size: 13px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
 .cf-brief-form { display: flex; flex-direction: column; gap: 14px; max-width: 640px; }
 .cf-brief-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+/* Centered brief step */
+.cf-brief-center { max-width: 640px; margin: 0 auto; padding-top: 16px; }
+.cf-brief-center .cf-step-title,
+.cf-brief-center .cf-step-sub { text-align: center; }
+.cf-brief-center .cf-brief-form { max-width: none; }
+.cf-brief-pills { justify-content: center; flex-wrap: wrap; margin-bottom: 18px; }
+.cf-brief-prompt {
+  display: flex; gap: 12px; align-items: flex-start;
+  background: var(--primary-dim, rgba(99,102,241,0.08));
+  border: 1px solid rgba(99,102,241,0.22); border-radius: var(--radius);
+  padding: 14px 16px; margin: 14px 0;
+}
+.cf-brief-prompt-icon {
+  color: var(--primary); font-size: 16px; line-height: 1.4; flex-shrink: 0;
+}
+.cf-brief-prompt-body { min-width: 0; }
+.cf-brief-prompt-label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em;
+  color: var(--primary); margin-bottom: 5px;
+}
+.cf-brief-prompt-text {
+  font-size: 13px; color: var(--text); line-height: 1.55; font-style: italic;
+}
 .cf-field label { display: block; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 5px; }
 .cf-field input, .cf-field select, .cf-field textarea {
   width: 100%; background: var(--card2); border: 1px solid var(--border); border-radius: var(--radius-sm);
