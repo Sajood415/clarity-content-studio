@@ -182,6 +182,32 @@
 }
 .cf-lib-drawer-actions .btn { justify-content: center; }
 
+/* Engagement stats */
+.cf-lib-stats {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px;
+  font-size: 11px; color: var(--muted); margin-top: 4px;
+}
+.cf-lib-stat { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.cf-lib-stats-lg { font-size: 13px; gap: 8px 20px; }
+.cf-lib-stats-lg .cf-lib-stat { color: var(--text); font-weight: 600; }
+.cf-lib-perf {
+  padding: 12px 14px; border: 1px solid rgba(52,211,153,0.25);
+  background: rgba(52,211,153,0.07); border-radius: var(--radius-sm);
+}
+.cf-lib-perf .label { margin-bottom: 8px; color: #34d399; }
+
+/* Publish / schedule panel */
+.cf-lib-schedule {
+  padding: 14px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--card2);
+}
+.cf-lib-schedule-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.cf-lib-schedule-current { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+.cf-lib-schedule-current strong { color: var(--text); }
+.cf-lib-schedule-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0 12px; }
+.cf-lib-schedule-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.cf-lib-schedule-actions .btn { flex: 1; justify-content: center; }
+
 /* Topbar & preferences bar */
 .cf-topbar-right { display: flex; align-items: center; gap: 12px; }
 .cf-topbar .create-status { margin-bottom: 0; }

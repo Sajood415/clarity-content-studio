@@ -114,6 +114,92 @@ var CreateFlow = (function () {
       + '</div>';
   }
 
+  function cfSampleLibraryItems() {
+    return [
+      {
+        id: 'lib-1', modality: 'image', platform: 'Instagram', format: 'Feed post',
+        title: 'Sourdough Saturday is back — 72-hour cold ferment, stone-baked, limited batch.',
+        pf: 94, status: 'Published', date: '2 days ago', campaign: 'Sourdough Saturday Launch',
+        publishMode: 'now', dims: '1080×1080', aspect: '1:1', theme: 'sourdough',
+        previewText: 'Sourdough Saturday is back — 72-hour cold ferment, stone-baked, limited batch.',
+        storyboard: '', rationale: 'Hero crumb shot leads with craft; limited-batch line drives urgency.',
+        proof: '72-hour cold ferment, local flour, limited 120-loaf batch.',
+        cta: 'Pre-order now — closes Friday at 6 PM.'
+      },
+      {
+        id: 'lib-2', modality: 'text', platform: 'LinkedIn', format: 'Thought post',
+        title: 'Why we ferment for 72 hours when the market rewards speed.',
+        pf: 91, status: 'Published', date: '3 days ago', campaign: 'Craft Story Series',
+        publishMode: 'now', dims: '', aspect: '1:1', theme: '',
+        previewText: 'Everyone is racing to bake faster. We went the other way. Here is what 72 hours of patience does to a loaf — and to a customer relationship.',
+        storyboard: '', rationale: 'Contrarian hook positions Hearth against ghost-kitchen convenience.',
+        proof: '68% of food-tech startups shuttered since 2023; artisan bakeries grew 14% CAGR.',
+        cta: 'Read the full story on our journal.'
+      },
+      {
+        id: 'lib-3', modality: 'video', platform: 'Instagram', format: 'Reel',
+        title: 'Behind the bake: 30 seconds of the Saturday ferment.',
+        pf: 88, status: 'Scheduled', date: 'Sat 9:00 AM', campaign: 'Sourdough Saturday Launch',
+        publishMode: 'schedule', dims: '1080×1920', aspect: '9:16', theme: 'sourdough',
+        previewText: 'Time-lapse of the 72-hour ferment, scoring, and the oven spring.',
+        storyboard: 'Mix → fold → cold proof → score → bake → crackling crust close-up.',
+        rationale: 'Process content lifts pre-order conversion 34% per consumer research.',
+        proof: 'Peak engagement Saturday 8–11am.',
+        cta: 'Pre-order before the batch sells out.'
+      },
+      {
+        id: 'lib-4', modality: 'email', platform: 'Email', format: 'Newsletter',
+        title: 'Your Saturday loaf is ready to reserve.',
+        pf: 90, status: 'In Campaign', date: '1 day ago', campaign: 'Sourdough Saturday Launch',
+        publishMode: 'campaign', dims: '', aspect: '1:1', theme: '',
+        previewText: 'The summer drop is here — 120 loaves, 72-hour ferment, gone by noon last week. Reserve yours before Friday 6 PM.',
+        storyboard: '', rationale: 'Scarcity + personal subject line drives weekend pre-orders.',
+        proof: 'Sold out in 4 hours last drop · 4.9★ from 200+ local reviews.',
+        cta: 'Reserve my loaf →'
+      },
+      {
+        id: 'lib-5', modality: 'image', platform: 'Facebook', format: 'Feed post',
+        title: 'Meet the farmers behind every loaf.',
+        pf: 86, status: 'Draft', date: 'Just now', campaign: 'Craft Story Series',
+        publishMode: 'draft', dims: '1200×630', aspect: '1.91:1', theme: 'sourdough',
+        previewText: 'A short series on the local hands that make our flour possible.',
+        storyboard: '', rationale: 'Local sourcing angle builds community over transaction.',
+        proof: '3-part story arc · 12k combined views on pilot episode.',
+        cta: 'Follow for episode 2 this Thursday.'
+      },
+      {
+        id: 'lib-6', modality: 'audio', platform: 'Podcast', format: 'Audiogram',
+        title: 'The sound of a 72-hour crust.',
+        pf: 83, status: 'Draft', date: '4 days ago', campaign: '',
+        publishMode: 'draft', dims: '', aspect: '1:1', theme: '',
+        previewText: 'A 20-second audiogram of the crackle — paired with the founder’s note on patience.',
+        storyboard: '', rationale: 'Sensory audio hook differentiates from visual-only feeds.',
+        proof: 'Limited 120-loaf batch.',
+        cta: 'Listen, then pre-order.'
+      },
+      {
+        id: 'lib-7', modality: 'text', platform: 'X', format: 'Post',
+        title: '120 loaves. 72 hours. One Saturday.',
+        pf: 87, status: 'Published', date: '5 days ago', campaign: 'Sourdough Saturday Launch',
+        publishMode: 'now', dims: '', aspect: '1:1', theme: '',
+        previewText: '120 loaves. 72 hours of cold ferment. One Saturday morning. Last drop sold out in 4 hours — set your alarm.',
+        storyboard: '', rationale: 'Short numeric hook optimized for X skim-reading.',
+        proof: 'Sold out in 4 hours last drop.',
+        cta: 'Pre-order link in bio.'
+      },
+      {
+        id: 'lib-8', modality: 'image', platform: 'Instagram', format: 'Story',
+        title: 'Last call: pre-orders close Friday 6 PM.',
+        pf: 89, status: 'Scheduled', date: 'Fri 4:00 PM', campaign: 'Sourdough Saturday Launch',
+        publishMode: 'schedule', dims: '1080×1920', aspect: '9:16', theme: 'sourdough',
+        previewText: 'Countdown story — pre-orders close Friday at 6 PM sharp.',
+        storyboard: '', rationale: 'Deadline reminder recaptures undecided followers.',
+        proof: 'Limited 120-loaf batch.',
+        cta: 'Swipe up to reserve.'
+      }
+    ];
+  }
+
   function init(state) {
     state.createFlow = {
       step: 1, modality: null, platform: null, format: null, aspect: '1:1', dims: '',
@@ -121,18 +207,19 @@ var CreateFlow = (function () {
       published: false, publishMode: null, genStartedAt: null,
       campaignBannerDismissed: false
     };
-    state.createdItems = [];
+    state.createdItems = cfSampleLibraryItems();
     state.cfPrefs = {
       brandKitLock: true, style: 'Warm craft', tones: ['Warm', 'Authentic'],
       colors: ['#6366f1', '#f59e0b', '#34d399', '#0e1320'],
       voice: 'Hearth Bakery', logoPlacement: 'Bottom-right'
     };
     state.cfPrefDrawerOpen = false;
-    state.cfSidebarOpen = true;
+    state.cfSidebarOpen = false;
     state.cfScheduleTime = 'Thu 10:00 AM';
     state.cfCampaign = 'Sourdough Saturday Launch';
     state.cfLibraryFilter = 'all';
     state.cfLibrarySelectedId = null;
+    state.cfLibScheduleDraft = { date: '', time: '' };
     if (!state.createBrief.proof) state.createBrief.proof = '72-hour cold ferment, local flour, limited 120-loaf batch.';
     if (!state.createBrief.cta) state.createBrief.cta = 'Pre-order now — closes Friday at 6 PM.';
   }
@@ -581,6 +668,55 @@ var CreateFlow = (function () {
     var map = { Draft: 'pill-muted', Published: 'pill-green', Scheduled: 'pill-indigo', 'In Campaign': 'pill-amber' };
     return map[status] || 'pill-muted';
   }
+  function cfEnsureStats(item) {
+    if (!item.stats) {
+      var base = 0;
+      for (var i = 0; i < item.id.length; i++) base += item.id.charCodeAt(i) * (i + 1);
+      var seed = (base * 97) % 997;
+      item.stats = {
+        views: 1100 + seed * 7,
+        likes: 70 + (seed % 280),
+        comments: 4 + (seed % 38),
+        shares: 2 + (seed % 22)
+      };
+    }
+    return item.stats;
+  }
+  function cfFmtNum(n) {
+    if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+    return '' + n;
+  }
+  function cfStatsRow(item, compact) {
+    var s = cfEnsureStats(item);
+    var cls = compact ? 'cf-lib-stats' : 'cf-lib-stats cf-lib-stats-lg';
+    return '<div class="' + cls + '">'
+      + '<span class="cf-lib-stat">\uD83D\uDC41 ' + cfFmtNum(s.views) + '</span>'
+      + '<span class="cf-lib-stat">\u2764\uFE0F ' + cfFmtNum(s.likes) + '</span>'
+      + '<span class="cf-lib-stat">\uD83D\uDCAC ' + cfFmtNum(s.comments) + '</span>'
+      + '<span class="cf-lib-stat">\u21AA ' + cfFmtNum(s.shares) + '</span>'
+      + '</div>';
+  }
+  function cfFormatSchedule(dateStr, timeStr) {
+    if (!dateStr) return '';
+    var parts = dateStr.split('-');
+    if (parts.length !== 3) return '';
+    var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    var label = months[parseInt(parts[1], 10) - 1] + ' ' + parseInt(parts[2], 10) + ', ' + parts[0];
+    if (timeStr) {
+      var tp = timeStr.split(':');
+      var h = parseInt(tp[0], 10);
+      var m = tp[1] || '00';
+      var ampm = h >= 12 ? 'PM' : 'AM';
+      var h12 = h % 12;
+      if (h12 === 0) h12 = 12;
+      label += ' \u00B7 ' + h12 + ':' + m + ' ' + ampm;
+    }
+    return label;
+  }
+  window.cfLibSetScheduleField = function (field, value) {
+    if (!appState.cfLibScheduleDraft) appState.cfLibScheduleDraft = { date: '', time: '' };
+    appState.cfLibScheduleDraft[field] = value;
+  };
   function cfPrettyModality(mod) {
     return mod ? mod.charAt(0).toUpperCase() + mod.slice(1) : '';
   }
@@ -626,12 +762,21 @@ var CreateFlow = (function () {
     if (action === 'publish') {
       item.status = 'Published';
       item.date = 'Just now';
+      cfEnsureStats(item);
+      renderContent();
+      return;
+    }
+    if (action === 'unpublish') {
+      item.status = 'Draft';
+      item.date = 'Just now';
       renderContent();
       return;
     }
     if (action === 'schedule') {
+      var d = appState.cfLibScheduleDraft || {};
       item.status = 'Scheduled';
-      item.date = appState.cfScheduleTime;
+      item.date = cfFormatSchedule(d.date, d.time) || appState.cfScheduleTime;
+      appState.cfLibScheduleDraft = { date: '', time: '' };
       renderContent();
       return;
     }
@@ -757,14 +902,32 @@ var CreateFlow = (function () {
       + footer + cfRenderPrefDrawer() + '</div>';
   }
 
+  function cfLibrarySchedulePanel(item) {
+    var d = appState.cfLibScheduleDraft || { date: '', time: '' };
+    return '<div class="cf-lib-schedule">'
+      + '<div class="cf-lib-schedule-title">' + (item.status === 'Scheduled' ? 'Reschedule or publish now' : 'Publish or schedule this asset') + '</div>'
+      + (item.status === 'Scheduled' ? '<div class="cf-lib-schedule-current">Currently scheduled for <strong>' + item.date + '</strong></div>' : '')
+      + '<div class="cf-lib-schedule-row">'
+      + '<div class="cf-field"><label>Date</label><input type="date" value="' + (d.date || '') + '" onchange="cfLibSetScheduleField(\'date\',this.value)"></div>'
+      + '<div class="cf-field"><label>Time</label><input type="time" value="' + (d.time || '') + '" onchange="cfLibSetScheduleField(\'time\',this.value)"></div>'
+      + '</div>'
+      + '<div class="cf-lib-schedule-actions">'
+      + '<button class="btn btn-primary btn-sm" onclick="cfLibraryAction(\'publish\',\'' + item.id + '\')">\uD83D\uDE80 Publish now</button>'
+      + '<button class="btn btn-outline btn-sm" onclick="cfLibraryAction(\'schedule\',\'' + item.id + '\')">\uD83D\uDCC5 Schedule</button>'
+      + '</div></div>';
+  }
   function cfLibraryDetail(item) {
     if (!item) return '';
+    var isPublished = item.status === 'Published';
     return '<div class="cf-lib-overlay" onclick="cfCloseLibraryItem()"></div>'
       + '<div class="cf-lib-drawer">'
       + '<div class="cf-lib-drawer-head"><div><div class="label">Asset details</div><div class="cf-lib-title">' + item.title + '</div></div><span class="modal-close" onclick="cfCloseLibraryItem()">&#x2715;</span></div>'
       + '<div class="cf-lib-drawer-body">'
       + '<div class="cf-lib-meta-row"><span class="pill ' + cfStatusClass(item.status) + '">' + item.status + '</span><span class="pf-chip green"><span class="pf-chip-dot"></span>' + item.pf + ' PF</span><span class="pill pill-muted">' + item.platform + ' · ' + item.format + '</span></div>'
       + cfLibraryCardThumb(item)
+      + (isPublished
+        ? '<div class="cf-lib-perf"><div class="label">Performance</div>' + cfStatsRow(item, false) + '</div>'
+        : cfLibrarySchedulePanel(item))
       + '<div class="cf-lib-preview"><div class="label">Preview</div><p>' + (item.previewText || item.title || appState.createBrief.message) + '</p></div>'
       + (item.storyboard ? '<div class="cf-storyboard"><div class="cf-storyboard-label">Storyboard</div><div class="cf-storyboard-text">' + item.storyboard + '</div></div>' : '')
       + (item.rationale ? '<div class="cf-rationale" style="margin-top:8px;"><span>Why</span>' + item.rationale + '</div>' : '')
@@ -779,8 +942,7 @@ var CreateFlow = (function () {
       + '<button class="btn btn-primary" onclick="cfLibraryAction(\'open\',\'' + item.id + '\')">Open</button>'
       + '<button class="btn btn-outline" onclick="cfLibraryAction(\'duplicate\',\'' + item.id + '\')">Duplicate</button>'
       + '<button class="btn btn-outline" onclick="cfLibraryAction(\'regenerate\',\'' + item.id + '\')">Regenerate</button>'
-      + '<button class="btn btn-outline" onclick="cfLibraryAction(\'publish\',\'' + item.id + '\')">Publish</button>'
-      + '<button class="btn btn-outline" onclick="cfLibraryAction(\'schedule\',\'' + item.id + '\')">Schedule</button>'
+      + (isPublished ? '<button class="btn btn-outline" onclick="cfLibraryAction(\'unpublish\',\'' + item.id + '\')">Unpublish</button>' : '')
       + '</div></div>';
   }
 
@@ -796,7 +958,9 @@ var CreateFlow = (function () {
         + '<span class="pill ' + cfStatusClass(it.status) + '">' + it.status + '</span>'
         + '<span class="pf-chip green"><span class="pf-chip-dot"></span>' + it.pf + ' PF</span>'
         + '<span class="pill pill-muted">' + it.date + '</span>'
-        + '</div></div>';
+        + '</div>'
+        + (it.status === 'Published' ? cfStatsRow(it, true) : '')
+        + '</div>';
     }).join('');
     var detail = appState.cfLibrarySelectedId ? cfLibraryDetail(cfGetLibraryItem(appState.cfLibrarySelectedId)) : '';
     return '<div class="screen"><div class="flex-between" style="margin-bottom:18px;">'
