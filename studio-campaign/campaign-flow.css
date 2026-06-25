@@ -43,6 +43,10 @@
   width: 100%; background: var(--card2); border: 1px solid var(--border); border-radius: var(--radius-sm);
   padding: 10px 12px; color: var(--text); font-size: 13px; outline: none;
 }
+.cp-field input[type="date"],
+.cp-field input[type="time"] {
+  color: #fff; color-scheme: dark;
+}
 .cp-field textarea { min-height: 86px; resize: vertical; }
 .cp-field input:focus, .cp-field select:focus, .cp-field textarea:focus { border-color: var(--primary); }
 .cp-pill-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
