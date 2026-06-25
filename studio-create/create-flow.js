@@ -58,11 +58,97 @@ var CreateFlow = (function () {
     }
   };
   var CF_SUGGESTED = {
-    'text:LinkedIn': 0, 'text:Instagram': 0, 'text:X': 0, 'text:Email': 0,
-    'image:Instagram': 0, 'image:LinkedIn': 0, 'image:Facebook': 0, 'image:Pinterest': 0,
+    'text:LinkedIn': 0, 'text:Instagram': 0, 'text:X': 1, 'text:Email': 0,
+    'image:Instagram': 0, 'image:LinkedIn': 1, 'image:Facebook': 1, 'image:Pinterest': 0,
     'video:Instagram': 0, 'video:Facebook': 0, 'video:YouTube': 0, 'video:TikTok': 0,
     'audio:Spotify': 0, 'audio:Apple': 0, 'audio:YouTube': 0
   };
+  var CF_SUGGEST_WHY = {
+    'text:LinkedIn': 'Long-form Posts drive the most reach on LinkedIn',
+    'text:Instagram': 'Captions outperform Story text for feed engagement',
+    'text:X': 'Threads earn more impressions than single tweets',
+    'text:Email': 'Newsletter is the only native long-form email format',
+    'image:Instagram': 'Portrait 4:5 takes the most feed real estate',
+    'image:LinkedIn': 'Square 1:1 reads best in the LinkedIn feed',
+    'image:Facebook': 'Feed 1:1 is the safest crop for Facebook',
+    'image:Pinterest': 'Tall 2:3 pins get the highest save rate',
+    'video:Instagram': 'Reel 9:16 is the highest-distribution video format',
+    'video:Facebook': 'Reel 9:16 gets prioritized in Facebook video',
+    'video:YouTube': 'Shorts capture the most new-viewer reach',
+    'video:TikTok': '9:16 cover is the native TikTok format',
+    'audio:Spotify': 'Full episodes build the strongest listener habit',
+    'audio:Apple': 'Full episodes index best in Apple Podcasts',
+    'audio:YouTube': 'Video podcast unlocks YouTube discovery'
+  };
+  var CF_SAMPLE_INTELLIGENCE = {
+    brand: 'Hearth Bakery',
+    persona: {
+      name: 'Maya Holloway',
+      seg: 'Local foodie · 28–45 · drives for quality',
+      insight: 'Values authenticity over trends. Responds to process stories and limited-batch urgency.'
+    },
+    market: {
+      whiteSpace: 'Artisan craft vs ghost-kitchen convenience — competitors sell speed, Hearth sells patience.',
+      gap: '68% of food-tech startups shuttered since 2023; artisan bakeries grew 14% CAGR.',
+      trend: 'Slow food · local sourcing · behind-the-scenes content'
+    },
+    consumer: {
+      trigger: 'Fear of missing the batch. Motivator: feeling part of a community, not a transaction.',
+      research: 'Pre-order conversion lifts 34% when ferment process is shown. Peak engagement Sat 8–11am.'
+    }
+  };
+  function cfHasIntelligence() {
+    var intel = appState.intelligence;
+    return !!(intel && intel.persona && intel.persona.name && intel.market && intel.market.whiteSpace && intel.consumer && intel.consumer.trigger);
+  }
+  function cfModalityOpts(f) {
+    if (f.modality === 'image') {
+      if (!f.imageOpts) f.imageOpts = { styleDir: 'Editorial craft', palette: (appState.cfPrefs.colors || ['#6366f1'])[0], textOverlay: true };
+      return f.imageOpts;
+    }
+    if (f.modality === 'video') {
+      if (!f.videoOpts) f.videoOpts = { hook: 'Bold claim', pacing: 'Fast cuts', captions: true };
+      return f.videoOpts;
+    }
+    if (f.modality === 'audio') {
+      if (!f.audioOpts) f.audioOpts = { runLength: 'Standard (25–45 min)', voiceStyle: 'Conversational', musicBed: true };
+      return f.audioOpts;
+    }
+    if (!f.textOpts) f.textOpts = { length: 'Medium (~120 words)', tone: 'Match brand tone', style: 'Story-led' };
+    return f.textOpts;
+  }
+  function cfAppliedControlsSummary(f) {
+    var o = cfModalityOpts(f);
+    if (f.modality === 'text') return o.length + ' · ' + o.style + ' · Tone: ' + (o.tone === 'Match brand tone' ? appState.cfPrefs.tones.join(', ') : o.tone);
+    if (f.modality === 'image') return (f.aspect || '1:1') + ' · ' + o.styleDir + ' · Overlay ' + (o.textOverlay ? 'on' : 'off');
+    if (f.modality === 'video') return (f.aspect || '9:16') + ' · ' + o.hook + ' · ' + o.pacing + ' · Captions ' + (o.captions ? 'on' : 'off');
+    return o.runLength + ' · ' + o.voiceStyle + (o.musicBed ? ' · Music bed' : '');
+  }
+  window.cfSetOpt = function (key, value) {
+    var f = cfFlow();
+    cfModalityOpts(f)[key] = value;
+    renderContent();
+  };
+  window.cfSetAspect = function (val) {
+    cfFlow().aspect = val;
+    renderContent();
+  };
+  window.cfToggleOpt = function (key) {
+    var f = cfFlow();
+    var o = cfModalityOpts(f);
+    o[key] = !o[key];
+    renderContent();
+  };
+  function cfLoadSampleIntelligence() {
+    appState.intelligence = JSON.parse(JSON.stringify(CF_SAMPLE_INTELLIGENCE));
+    var b = appState.createBrief;
+    b.persona = CF_SAMPLE_INTELLIGENCE.persona.name;
+    if (!b.goal) b.goal = 'Drive weekend pre-orders';
+    if (!b.message) b.message = 'Sourdough Saturday is back — 72-hour cold ferment, stone-baked, limited batch. Craft over convenience.';
+    if (!b.whyNow) b.whyNow = 'Seasonal launch · Summer 2026';
+    if (!b.proof) b.proof = CF_SAMPLE_INTELLIGENCE.market.gap;
+    if (!b.cta) b.cta = 'Pre-order now — closes Friday at 6 PM.';
+  }
   var CF_TEXT_VARS = [
     { label: 'A', pf: 81, text: 'While ghost kitchens rise and fall, artisan baking keeps winning. Patience isn\'t a trend — it\'s the moat. Sourdough Saturday pre-orders are live.', storyboard: 'Contrarian hook → craft moat → CTA', rationale: 'Uses market gap data — ghost kitchen vs artisan CAGR' },
     { label: 'B', pf: 88, text: 'Hot take: the best food businesses aren\'t chasing trends — they\'re outlasting them.\n\n68% of food-tech startups shuttered since 2023. Artisan bakeries grew 14% CAGR.\n\nSourdough Saturday is back. Pre-orders open now. 🍞', storyboard: 'Hot take → stat proof → urgency CTA', rationale: 'Best PF for Maya — data + authenticity tone' },
@@ -264,24 +350,32 @@ var CreateFlow = (function () {
   }
 
   function cfIntelRail() {
-    var intel = appState.intelligence;
+    var intel = appState.intelligence || {};
     var brief = appState.createBrief;
     var p = appState.cfPrefs;
+    var hasIntel = cfHasIntelligence();
+    var persona = intel.persona || {};
+    var market = intel.market || {};
+    var consumer = intel.consumer || {};
+    var intelBody = hasIntel
+      ? '<div class="cf-intel-block"><div class="label">Persona</div>'
+        + '<div class="cf-intel-persona" id="cf-rail-persona">' + persona.name + '</div>'
+        + '<div class="cf-intel-text">' + persona.seg + '</div></div>'
+        + '<div class="cf-intel-block"><div class="label">Market</div><div class="cf-intel-text">' + market.whiteSpace + '</div></div>'
+        + '<div class="cf-intel-block"><div class="label">Consumer</div><div class="cf-intel-text">' + consumer.trigger + '</div></div>'
+        + '<div class="evidence-item"><div class="evidence-tag research">research</div><div class="evidence-text">' + market.gap + '</div></div>'
+        + '<div class="evidence-item"><div class="evidence-tag social">consumer</div><div class="evidence-text">' + consumer.research + '</div></div>'
+      : '<div class="cf-intel-block cf-intel-empty"><div class="cf-intel-text" style="font-style:italic;">No research context loaded yet. Complete Intelligence setup to sharpen persona fit and messaging.</div>'
+        + '<button class="btn btn-outline btn-sm" style="margin-top:10px;" onclick="cfLoadSampleIntelOnly()">Load sample intelligence</button></div>';
     return '<button class="cf-rail-reopen" onclick="cfToggleSidebar()" title="Show intelligence">&#10094;</button>'
       + '<div class="cf-intel-rail">'
       + '<button class="cf-rail-toggle" onclick="cfToggleSidebar()" title="Hide intelligence">&#10095;</button>'
-      + '<div class="cf-intel-rail-head">● Intelligence active</div>'
-      + '<div class="cf-intel-block"><div class="label">Persona</div>'
-      + '<div class="cf-intel-persona" id="cf-rail-persona">' + intel.persona.name + '</div>'
-      + '<div class="cf-intel-text">' + intel.persona.seg + '</div></div>'
-      + '<div class="cf-intel-block"><div class="label">Market</div><div class="cf-intel-text">' + intel.market.whiteSpace + '</div></div>'
-      + '<div class="cf-intel-block"><div class="label">Consumer</div><div class="cf-intel-text">' + intel.consumer.trigger + '</div></div>'
+      + '<div class="cf-intel-rail-head"' + (hasIntel ? '' : ' style="color:var(--muted);"') + '>' + (hasIntel ? '● Intelligence active' : '○ Intelligence pending') + '</div>'
+      + intelBody
       + '<div class="cf-intel-block"><div class="label">Brief</div>'
       + '<div class="cf-intel-text"><strong style="color:var(--text);">' + brief.goal + '</strong><br><br>' + brief.message + '</div></div>'
       + '<div class="cf-intel-block"><div class="label">Preferences</div>'
       + '<div class="cf-intel-text">' + p.style + ' · ' + p.tones[0] + '<br>Brand kit ' + (p.brandKitLock ? 'locked ✓' : 'off') + '</div></div>'
-      + '<div class="evidence-item"><div class="evidence-tag research">research</div><div class="evidence-text">' + intel.market.gap + '</div></div>'
-      + '<div class="evidence-item"><div class="evidence-tag social">consumer</div><div class="evidence-text">' + intel.consumer.research + '</div></div>'
       + '</div>';
   }
 
@@ -301,17 +395,23 @@ var CreateFlow = (function () {
 
   function cfStepBrief() {
     var brief = appState.createBrief;
-    var intel = appState.intelligence;
+    var intel = appState.intelligence || {};
+    var hasIntel = cfHasIntelligence();
+    var brandName = hasIntel && intel.brand ? intel.brand : 'Your brand';
+    var personaName = hasIntel && intel.persona ? intel.persona.name : (brief.persona || 'your audience');
     var f = cfFlow();
+    var promptBlock = hasIntel
+      ? '<div class="cf-brief-prompt">'
+        + '<div class="cf-brief-prompt-icon">\u2736</div>'
+        + '<div class="cf-brief-prompt-body">'
+        + '<div class="cf-brief-prompt-label">Clara drafted this brief from your research</div>'
+        + '<div class="cf-brief-prompt-text">\u201CBuild a creative brief for ' + brandName + ' aimed at ' + personaName + '. Use the market gap and consumer trigger from Intelligence, and lead with craft, differentiation, and limited-batch urgency.\u201D</div>'
+        + '</div></div>'
+      : '';
     return '<div class="cf-brief-center">'
       + '<div class="cf-step-title">Write the creative brief</div>'
-      + '<div class="cf-step-sub">' + intel.brand + ' · lock the strategy your generator will execute</div>'
-      + '<div class="cf-brief-prompt">'
-      + '<div class="cf-brief-prompt-icon">\u2736</div>'
-      + '<div class="cf-brief-prompt-body">'
-      + '<div class="cf-brief-prompt-label">Clara drafted this brief from your research</div>'
-      + '<div class="cf-brief-prompt-text">\u201CBuild a creative brief for ' + intel.brand + ' aimed at ' + intel.persona.name + '. Use the market gap and consumer trigger from Intelligence, and lead with craft, differentiation, and limited-batch urgency.\u201D</div>'
-      + '</div></div>'
+      + '<div class="cf-step-sub">' + brandName + ' · lock the strategy your generator will execute</div>'
+      + promptBlock
       + '<div class="cf-pref-bar cf-brief-pills">'
       + '<span class="pill pill-muted">' + (f.modality ? cfPrettyModality(f.modality) : 'Type') + '</span>'
       + '<span class="pill pill-muted">' + (f.platform || 'Platform') + '</span>'
@@ -333,8 +433,80 @@ var CreateFlow = (function () {
       + '<div class="cf-field"><label>Proof points</label><input value="' + (brief.proof || '') + '" placeholder="What makes this claim credible?" oninput="appState.createBrief.proof=this.value"><div class="cf-field-help">Ingredients, process, data, social proof.</div></div>'
       + '<div class="cf-field"><label>Call to action</label><input value="' + (brief.cta || '') + '" placeholder="What exactly should people do next?" oninput="appState.createBrief.cta=this.value"><div class="cf-field-help">Example: Pre-order now. Pickup Saturday 8-11 AM.</div></div>'
       + '</div>'
+      + cfCreativeControls(f)
       + '</div>'
       + '</div>';
+  }
+
+  function cfPrefsStrip() {
+    var p = appState.cfPrefs;
+    return '<div class="cf-prefs-strip">'
+      + '<div class="cf-prefs-strip-main">'
+      + '<span class="cf-prefs-strip-icon">&#9881;</span>'
+      + '<span class="cf-prefs-strip-text">Applied preferences: <strong>' + p.style + '</strong> · Tone <strong>' + p.tones.join(', ') + '</strong> · Brand kit <strong>' + (p.brandKitLock ? 'locked' : 'off') + '</strong></span>'
+      + '</div>'
+      + '<button class="cf-prefs-strip-edit" onclick="cfOpenPrefs()">Edit</button>'
+      + '</div>';
+  }
+
+  function cfCreativeControls(f) {
+    var o = cfModalityOpts(f);
+    var title = '<div class="cf-controls-title">' + cfPrettyModality(f.modality) + ' controls</div>'
+      + '<div class="cf-controls-sub">Shape how this ' + f.modality + ' is generated.</div>';
+    var body;
+    if (f.modality === 'text') {
+      body = cfControlSelect('length', 'Word count', o.length, ['Short (~60 words)', 'Medium (~120 words)', 'Long (~250 words)'])
+        + cfControlSelect('tone', 'Tone', o.tone, ['Match brand tone', 'Warm', 'Bold', 'Professional', 'Playful'])
+        + cfControlSelect('style', 'Format style', o.style, ['Story-led', 'Listicle', 'Punchy one-liner', 'Q&A / hook']);
+    } else if (f.modality === 'image') {
+      body = cfControlAspect(f, ['1:1', '4:5', '9:16', '1.91:1'])
+        + cfControlSelect('styleDir', 'Style direction', o.styleDir, ['Editorial craft', 'Minimal clean', 'Bold promo', 'Documentary / BTS'])
+        + cfControlPalette(o.palette)
+        + cfControlToggle('textOverlay', 'Text overlay', o.textOverlay);
+    } else if (f.modality === 'video') {
+      body = cfControlAspect(f, ['9:16', '1:1', '16:9'])
+        + cfControlSelect('hook', 'Hook style', o.hook, ['Bold claim', 'Question', 'Pattern interrupt', 'Stat drop'])
+        + cfControlSelect('pacing', 'Pacing', o.pacing, ['Fast cuts', 'Steady narrative', 'Calm / ASMR'])
+        + cfControlToggle('captions', 'Burn-in captions', o.captions);
+    } else {
+      body = cfControlSelect('runLength', 'Episode length', o.runLength, ['Short clip (3–5 min)', 'Standard (25–45 min)'])
+        + cfControlSelect('voiceStyle', 'Voice style', o.voiceStyle, ['Conversational', 'Narrated', 'Interview'])
+        + cfControlToggle('musicBed', 'Music bed', o.musicBed);
+    }
+    return '<div class="cf-creative-controls">' + title + '<div class="cf-controls-grid">' + body + '</div></div>';
+  }
+  function cfControlSelect(key, label, value, options) {
+    return '<div class="cf-field cf-control"><label>' + label + '</label><select onchange="cfSetOpt(\'' + key + '\',this.value)">'
+      + options.map(function (op) { return '<option' + (value === op ? ' selected' : '') + '>' + op + '</option>'; }).join('')
+      + '</select></div>';
+  }
+  function cfControlReadonly(label, value) {
+    return '<div class="cf-field cf-control"><label>' + label + '</label>'
+      + '<div class="cf-control-static">' + value + ' <span class="cf-control-locked">from format</span></div></div>';
+  }
+  function cfControlAspect(f, options) {
+    var current = f.aspect || options[0];
+    if (options.indexOf(current) < 0) options = [current].concat(options);
+    return '<div class="cf-field cf-control"><label>Aspect ratio</label><select onchange="cfSetAspect(this.value)">'
+      + options.map(function (op) { return '<option' + (current === op ? ' selected' : '') + '>' + op + '</option>'; }).join('')
+      + '</select></div>';
+  }
+  function cfControlToggle(key, label, on) {
+    return '<div class="cf-field cf-control"><label>' + label + '</label>'
+      + '<div style="display:flex;align-items:center;gap:10px;margin-top:2px;">'
+      + '<div class="toggle-sw' + (on ? ' on' : '') + '" onclick="cfToggleOpt(\'' + key + '\')"><div class="toggle-knob"></div></div>'
+      + '<span style="font-size:12px;color:var(--muted);">' + (on ? 'On' : 'Off') + '</span></div></div>';
+  }
+  function cfControlPalette(selected) {
+    var colors = appState.cfPrefs.colors || [];
+    return '<div class="cf-field cf-control"><label>Color palette</label>'
+      + '<div class="cf-palette-row">'
+      + colors.map(function (c) {
+          var on = selected === c;
+          return '<div class="cf-palette-swatch' + (on ? ' on' : '') + '" style="background:' + c + ';" onclick="cfSetOpt(\'palette\',\'' + c + '\')" title="' + c + '"></div>';
+        }).join('')
+      + '<span class="cf-control-locked" style="margin-left:6px;align-self:center;">brand kit</span>'
+      + '</div></div>';
   }
 
   function cfStepModality() {
@@ -372,16 +544,19 @@ var CreateFlow = (function () {
     var f = cfFlow();
     var formats = (CF_FORMATS[f.modality] && f.platform && CF_FORMATS[f.modality][f.platform]) || [];
     var sugIdx = f.platform ? cfSuggestedIndex(f.modality, f.platform) : 0;
+    var recName = formats.length && formats[sugIdx] ? formats[sugIdx].id : '';
+    var why = CF_SUGGEST_WHY[f.modality + ':' + f.platform] || '';
     var fmtHtml = formats.length ? '<div class="format-chip-row" style="margin-top:8px;">'
       + formats.map(function (fmt, i) {
           var sug = i === sugIdx;
           return '<span class="format-chip' + (f.format === fmt.id ? ' active' : '') + (sug ? ' cf-suggested' : '') + '" onclick="cfSelectFormat(' + i + ')">'
-            + fmt.id + (sug ? ' ✨' : '') + '</span>';
+            + fmt.id + (sug ? ' <span class="format-chip-rec">★ Recommended</span>' : '') + '</span>';
         }).join('')
       + '</div>'
+      + (recName ? '<div class="cf-rec-note">★ <strong>' + recName + '</strong> recommended for ' + f.platform + (why ? ' — ' + why : '') + '</div>' : '')
       + (f.format ? '<div class="cf-format-meta">'
         + '<span class="ch-compliance ok">&#10003; ' + f.format + (f.dims ? ' · ' + f.dims : '') + (f.aspect ? ' · ' + f.aspect : '') + '</span>'
-        + (f.suggestedFormat ? '<span class="cf-suggest-badge">✨ AI recommended for ' + f.platform + '</span>' : '')
+        + (f.suggestedFormat ? '<span class="cf-suggest-badge">★ Recommended for ' + f.platform + '</span>' : '<span class="cf-suggest-badge cf-suggest-badge-alt">Custom choice</span>')
         + '</div>' : '')
       : '<div class="cf-history-empty" style="padding:24px 0;">Select a platform first to see recommended formats.</div>';
     return '<div class="cf-step-title">Format</div>'
@@ -398,6 +573,7 @@ var CreateFlow = (function () {
       + '<div class="cf-spin"></div>'
       + '<div class="cf-gen-title">Maker is creating…</div>'
       + '<div class="cf-gen-sub">' + appState.createBrief.persona + ' · ' + f.platform + ' · ' + f.format + '</div>'
+      + cfAppliedBar(f)
       + cfBriefSignalBar(true)
       + '<div class="cf-gen-steps">'
       + CF_GEN_STEPS.map(function (s, i) {
@@ -425,12 +601,32 @@ var CreateFlow = (function () {
       + '<button class="btn btn-outline btn-sm" style="width:100%;margin-top:8px;" onclick="event.stopPropagation();cfSelectVariation(' + i + ')">' + (f.variation === i ? 'Selected ✓' : 'Select') + '</button></div>';
   }
 
+  function cfIntelGate() {
+    return '<div class="cf-intel-gate">'
+      + '<div class="cf-intel-gate-icon">&#128274;</div>'
+      + '<div class="cf-intel-gate-title">Research is required before content generation</div>'
+      + '<div class="cf-intel-gate-text">Please complete Intelligence setup first so the content engine can generate output for the right audience and business goal.</div>'
+      + '<div class="cf-intel-gate-actions">'
+      + '<button class="btn btn-primary" onclick="cfStartIntelligenceSetup()">Start Intelligence Setup</button>'
+      + '<button class="btn btn-outline" onclick="cfUseSampleIntelligence()">Use Sample Intelligence for Demo</button>'
+      + '</div></div>';
+  }
+  function cfAppliedBar(f) {
+    var p = appState.cfPrefs;
+    return '<div class="cf-applied-bar">'
+      + '<span class="cf-applied-chip">&#9881; Tone: ' + p.tones.join(', ') + '</span>'
+      + '<span class="cf-applied-chip">Brand kit ' + (p.brandKitLock ? 'locked' : 'off') + '</span>'
+      + '<span class="cf-applied-chip">' + cfAppliedControlsSummary(f) + '</span>'
+      + '</div>';
+  }
   function cfStepGenerate() {
     var f = cfFlow();
+    if (!cfHasIntelligence()) return cfIntelGate();
     if (f.generating) return cfStepGenerateProgress();
     var vars = f.modality === 'image' ? CF_IMAGE_VARS : f.modality === 'video' ? CF_VIDEO_VARS : f.modality === 'audio' ? CF_AUDIO_VARS : CF_TEXT_VARS;
     return '<div class="cf-step-title">Pick a variation</div>'
       + '<div class="cf-step-sub">3 options · persona-scored · storyboard + strategic rationale</div>'
+      + cfAppliedBar(f)
       + cfBriefSignalBar(true)
       + '<div class="variation-grid">' + vars.map(function (v, i) { return cfVariationCard(v, i, f); }).join('') + '</div>'
       + '<button class="btn btn-ghost btn-sm" onclick="cfRegenerate()" style="margin-top:8px;">↻ Regenerate variations</button>';
@@ -545,6 +741,7 @@ var CreateFlow = (function () {
   window.cfSetPersona = function (val) {
     appState.createBrief.persona = val;
     var p = CF_PERSONAS[val] || CF_PERSONAS['Maya Holloway'];
+    if (!appState.intelligence) appState.intelligence = {};
     appState.intelligence.persona = { name: p.name, seg: p.seg, insight: p.insight };
     var nameEl = document.getElementById('cf-persona-name');
     var insightEl = document.getElementById('cf-persona-insight');
@@ -615,7 +812,12 @@ var CreateFlow = (function () {
       renderContent(); return;
     }
     if (f.step === 4) {
-      f.step = 5; f.generating = true; f.variation = null; f.genPhase = 0;
+      f.step = 5; f.variation = null; f.genPhase = 0;
+      if (!cfHasIntelligence()) {
+        f.generating = false;
+        renderContent(); return;
+      }
+      f.generating = true;
       if (!f.genStartedAt) f.genStartedAt = Date.now();
       renderContent(); cfRunGeneration(); return;
     }
@@ -648,7 +850,11 @@ var CreateFlow = (function () {
       storyboard: selected && selected.storyboard ? selected.storyboard : '',
       rationale: selected && selected.rationale ? selected.rationale : '',
       proof: appState.createBrief.proof || '',
-      cta: appState.createBrief.cta || ''
+      cta: appState.createBrief.cta || '',
+      appliedTone: appState.cfPrefs.tones.join(', '),
+      appliedStyle: appState.cfPrefs.style,
+      brandKitLocked: appState.cfPrefs.brandKitLock,
+      controls: cfAppliedControlsSummary(f)
     });
     f.publishMode = mode; f.step = 8; renderContent();
   };
@@ -828,6 +1034,29 @@ var CreateFlow = (function () {
     renderContent();
   };
 
+  function cfProceedAfterIntel() {
+    var f = cfFlow();
+    if (f.step < 5) f.step = 5;
+    f.generating = true;
+    f.variation = null;
+    f.genPhase = 0;
+    f.genStartedAt = Date.now();
+    renderContent();
+    cfRunGeneration();
+  }
+  window.cfStartIntelligenceSetup = function () {
+    cfLoadSampleIntelligence();
+    cfProceedAfterIntel();
+  };
+  window.cfUseSampleIntelligence = function () {
+    cfLoadSampleIntelligence();
+    cfProceedAfterIntel();
+  };
+  window.cfLoadSampleIntelOnly = function () {
+    cfLoadSampleIntelligence();
+    renderContent();
+  };
+
   window.cfStartCampaignFromCreate = function () {
     var brief = appState.createBrief;
     var campaignName = brief.goal || appState.cfCampaign || 'New Campaign';
@@ -936,6 +1165,8 @@ var CreateFlow = (function () {
       + '<div class="cf-lib-kv"><span>Channel</span><span>' + item.platform + '</span></div>'
       + '<div class="cf-lib-kv"><span>Type</span><span>' + cfPrettyModality(item.modality) + '</span></div>'
       + '<div class="cf-lib-kv"><span>Campaign</span><span>' + (item.campaign || 'None') + '</span></div>'
+      + (item.appliedTone ? '<div class="cf-lib-kv"><span>Applied tone</span><span>' + item.appliedTone + (item.brandKitLocked ? ' · Brand kit locked' : '') + '</span></div>' : '')
+      + (item.controls ? '<div class="cf-lib-kv"><span>Controls</span><span>' + item.controls + '</span></div>' : '')
       + '<div class="cf-lib-kv"><span>Last update</span><span>' + item.date + '</span></div>'
       + '</div>'
       + '<div class="cf-lib-drawer-actions">'

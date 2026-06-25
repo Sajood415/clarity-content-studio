@@ -404,10 +404,79 @@
   max-width: 520px; margin: 0 auto;
 }
 
+/* ─── Format recommendation (Fix 2a) ─────────────────────────── */
+.format-chip-rec {
+  font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--primary); margin-left: 4px;
+}
+.format-chip.cf-suggested { border-color: var(--primary); }
+.cf-rec-note {
+  font-size: 12px; color: var(--text); margin: 10px 0 4px;
+  padding: 8px 12px; background: var(--primary-dim, rgba(99,102,241,0.08));
+  border: 1px solid rgba(99,102,241,0.2); border-radius: var(--radius-sm); line-height: 1.5;
+}
+.cf-suggest-badge-alt { background: var(--card2) !important; color: var(--muted) !important; border-color: var(--border) !important; }
+
+/* ─── Applied preferences strip (Fix 2b) ─────────────────────── */
+.cf-prefs-strip {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 10px 14px; margin: 14px 0; border-radius: var(--radius-sm);
+  background: var(--card2); border: 1px solid var(--border);
+}
+.cf-prefs-strip-main { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.cf-prefs-strip-icon { color: var(--primary); flex-shrink: 0; }
+.cf-prefs-strip-text { font-size: 12px; color: var(--muted); line-height: 1.4; }
+.cf-prefs-strip-text strong { color: var(--text); font-weight: 600; }
+.cf-prefs-strip-edit {
+  flex-shrink: 0; background: none; border: 1px solid var(--border); color: var(--text);
+  font-size: 11px; font-weight: 600; padding: 5px 12px; border-radius: 7px; cursor: pointer;
+}
+.cf-prefs-strip-edit:hover { background: var(--card); border-color: var(--primary); }
+
+/* ─── Modality creative controls (Fix 1) ─────────────────────── */
+.cf-creative-controls {
+  margin-top: 18px; padding: 16px; border: 1px solid var(--border);
+  border-radius: var(--radius); background: var(--card2);
+}
+.cf-controls-title { font-size: 14px; font-weight: 700; color: var(--text); }
+.cf-controls-sub { font-size: 12px; color: var(--muted); margin: 2px 0 14px; }
+.cf-controls-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.cf-control-static {
+  padding: 10px 12px; background: var(--card); border: 1px dashed var(--border);
+  border-radius: var(--radius-sm); font-size: 13px; color: var(--text);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.cf-control-locked { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.cf-palette-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 2px; }
+.cf-palette-swatch {
+  width: 26px; height: 26px; border-radius: 7px; cursor: pointer;
+  border: 2px solid transparent; box-shadow: 0 0 0 1px var(--border);
+}
+.cf-palette-swatch.on { border-color: #fff; box-shadow: 0 0 0 2px var(--primary); }
+
+/* ─── Intelligence gate (Fix 3) ──────────────────────────────── */
+.cf-intel-gate {
+  max-width: 520px; margin: 40px auto; text-align: center;
+  padding: 32px 28px; border: 1px solid #fcd34d; background: #fffbeb; border-radius: var(--radius);
+}
+.cf-intel-gate-icon { font-size: 34px; margin-bottom: 12px; }
+.cf-intel-gate-title { font-size: 18px; font-weight: 700; color: #92400e; margin-bottom: 10px; line-height: 1.3; }
+.cf-intel-gate-text { font-size: 14px; color: #78350f; line-height: 1.6; margin-bottom: 22px; }
+.cf-intel-gate-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+/* ─── Applied bar on generate ────────────────────────────────── */
+.cf-applied-bar { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 14px; }
+.cf-applied-chip {
+  font-size: 11px; color: var(--muted); background: var(--card2);
+  border: 1px solid var(--border); border-radius: 999px; padding: 4px 11px;
+}
+.cf-intel-empty { background: rgba(252,211,153,0.08); border-color: rgba(252,211,153,0.4); }
+
 @media (max-width: 1100px) {
   .cf-body { grid-template-columns: 1fr; }
   .cf-intel-rail { display: none; }
   .cf-rail-reopen, .cf-body.cf-sidebar-collapsed .cf-rail-reopen { display: none; }
+  .cf-controls-grid { grid-template-columns: 1fr; }
   .cf-mod-grid { grid-template-columns: repeat(2, 1fr); }
   .cf-publish-layout { grid-template-columns: 1fr; }
   .cf-intel-confirm { grid-template-columns: 1fr; }
