@@ -118,7 +118,8 @@ var CreateFlow = (function () {
     state.createFlow = {
       step: 1, modality: null, platform: null, format: null, aspect: '1:1', dims: '',
       generating: false, genPhase: 0, variation: null, editContent: '',
-      published: false, publishMode: null, genStartedAt: null
+      published: false, publishMode: null, genStartedAt: null,
+      campaignBannerDismissed: false
     };
     state.createdItems = [];
     state.cfPrefs = {
@@ -127,6 +128,7 @@ var CreateFlow = (function () {
       voice: 'Hearth Bakery', logoPlacement: 'Bottom-right'
     };
     state.cfPrefDrawerOpen = false;
+    state.cfSidebarOpen = true;
     state.cfScheduleTime = 'Thu 10:00 AM';
     state.cfCampaign = 'Sourdough Saturday Launch';
     state.cfLibraryFilter = 'all';
@@ -178,7 +180,9 @@ var CreateFlow = (function () {
     var intel = appState.intelligence;
     var brief = appState.createBrief;
     var p = appState.cfPrefs;
-    return '<div class="cf-intel-rail">'
+    return '<button class="cf-rail-reopen" onclick="cfToggleSidebar()" title="Show intelligence">&#10094;</button>'
+      + '<div class="cf-intel-rail">'
+      + '<button class="cf-rail-toggle" onclick="cfToggleSidebar()" title="Hide intelligence">&#10095;</button>'
       + '<div class="cf-intel-rail-head">● Intelligence active</div>'
       + '<div class="cf-intel-block"><div class="label">Persona</div>'
       + '<div class="cf-intel-persona" id="cf-rail-persona">' + intel.persona.name + '</div>'
@@ -225,7 +229,6 @@ var CreateFlow = (function () {
       + '<div class="cf-intel-block"><div class="label">Market ✓</div><div class="cf-intel-text">' + intel.market.whiteSpace + '</div></div>'
       + '<div class="cf-intel-block"><div class="label">Consumer ✓</div><div class="cf-intel-text">' + intel.consumer.trigger + '</div></div>'
       + '</div>'
-      + cfPrefBar()
       + '<div class="cf-step-title" style="font-size:18px;">Write the creative brief</div>'
       + '<div class="cf-brief-form">'
       + '<div class="cf-brief-row">'
@@ -247,27 +250,9 @@ var CreateFlow = (function () {
 
   function cfStepModality() {
     var f = cfFlow();
-    var intel = appState.intelligence;
-    var brief = appState.createBrief;
-    return cfPrefBar()
-      + '<div class="cf-handoff">'
-      + '<div class="cf-handoff-head">'
-      + '<div><div class="cf-handoff-eyebrow">R&D and strategy complete</div><div class="cf-handoff-title">Everything is ready — start creating</div></div>'
-      + '<span class="pill pill-green">Intelligence Synced ✓</span>'
-      + '</div>'
-      + '<div class="cf-handoff-grid">'
-      + '<div class="cf-handoff-item"><span>Persona locked</span><strong>' + intel.persona.name + '</strong><em>' + intel.persona.seg + '</em></div>'
-      + '<div class="cf-handoff-item"><span>Market signal</span><strong>' + intel.market.whiteSpace + '</strong><em>' + intel.market.gap + '</em></div>'
-      + '<div class="cf-handoff-item"><span>Consumer trigger</span><strong>' + intel.consumer.trigger + '</strong><em>Brief goal: ' + brief.goal + '</em></div>'
-      + '</div>'
-      + '<div class="cf-handoff-foot">'
-      + '<span class="pill pill-muted">No extra setup needed</span>'
-      + '<span class="pill pill-muted">Brand kit + tone auto-applied</span>'
-      + '<span class="pill pill-muted">Estimated time: ~30 sec</span>'
-      + '</div>'
-      + '</div>'
-      + '<div class="cf-step-title">Type</div>'
-      + '<div class="cf-step-sub">Choose the content studio you want to use</div>'
+    return '<div class="cf-hero">'
+      + '<div class="cf-welcome-heading">What do you want to create?</div>'
+      + '<div class="cf-welcome-sub">Pick a content type and we\'ll handle the rest. Your research, tone, and brand are already loaded.</div>'
       + '<div class="cf-mod-grid">'
       + CF_MODS.map(function (m) {
           return '<div class="cf-mod-tile' + (f.modality === m.id ? ' selected' : '') + '" onclick="cfSelectModality(\'' + m.id + '\')">'
@@ -275,6 +260,7 @@ var CreateFlow = (function () {
             + '<div class="cf-mod-name">' + m.name + '</div>'
             + '<div class="cf-mod-desc">' + m.desc + '</div></div>';
         }).join('')
+      + '</div>'
       + '</div>';
   }
 
@@ -287,8 +273,7 @@ var CreateFlow = (function () {
         + '<div class="platform-tile-name">' + p.id + '</div>'
         + '<div class="platform-tile-desc">' + p.desc + '</div></div>';
     }).join('');
-    return cfPrefBar()
-      + '<div class="cf-step-title">Platform</div>'
+    return '<div class="cf-step-title">Platform</div>'
       + '<div class="cf-step-sub">Pick where this content will be published</div>'
       + '<div class="platform-tile-grid">' + platHtml + '</div>'
       + (f.platform ? '<div class="cf-format-meta"><span class="pill pill-indigo">' + f.platform + ' selected</span></div>' : '');
@@ -310,8 +295,7 @@ var CreateFlow = (function () {
         + (f.suggestedFormat ? '<span class="cf-suggest-badge">✨ AI recommended for ' + f.platform + '</span>' : '')
         + '</div>' : '')
       : '<div class="cf-history-empty" style="padding:24px 0;">Select a platform first to see recommended formats.</div>';
-    return cfPrefBar()
-      + '<div class="cf-step-title">Format</div>'
+    return '<div class="cf-step-title">Format</div>'
       + '<div class="cf-step-sub">Auto-sized to platform standards with smart recommendations</div>'
       + (f.platform ? '<div class="pill pill-muted" style="margin-bottom:10px;">' + f.platform + '</div>' : '')
       + fmtHtml;
@@ -356,8 +340,7 @@ var CreateFlow = (function () {
     var f = cfFlow();
     if (f.generating) return cfStepGenerateProgress();
     var vars = f.modality === 'image' ? CF_IMAGE_VARS : f.modality === 'video' ? CF_VIDEO_VARS : f.modality === 'audio' ? CF_AUDIO_VARS : CF_TEXT_VARS;
-    return cfPrefBar()
-      + '<div class="cf-step-title">Pick a variation</div>'
+    return '<div class="cf-step-title">Pick a variation</div>'
       + '<div class="cf-step-sub">3 options · persona-scored · storyboard + strategic rationale</div>'
       + cfBriefSignalBar(true)
       + '<div class="variation-grid">' + vars.map(function (v, i) { return cfVariationCard(v, i, f); }).join('') + '</div>'
@@ -369,10 +352,11 @@ var CreateFlow = (function () {
     var vars = f.modality === 'image' ? CF_IMAGE_VARS : f.modality === 'video' ? CF_VIDEO_VARS : f.modality === 'audio' ? CF_AUDIO_VARS : CF_TEXT_VARS;
     var v = f.variation !== null ? vars[f.variation] : vars[1];
     var storyStrip = '<div class="cf-edit-storyboard"><strong>Storyboard:</strong> ' + v.storyboard + ' · <span style="color:var(--muted);">' + v.rationale + '</span></div>';
+    var banner = cfCampaignPromoBanner();
 
     if (f.modality === 'text') {
       var text = f.editContent || v.text;
-      return cfPrefBar() + '<div class="cf-step-title">Edit your copy</div><div class="cf-step-sub">Live preview · persona fit updates as you type</div>' + storyStrip
+      return banner + '<div class="cf-step-title">Edit your copy</div><div class="cf-step-sub">Live preview · persona fit updates as you type</div>' + storyStrip
         + cfBriefSignalBar(true)
         + '<div class="platform-preview cf-edit-preview">'
         + '<div class="platform-preview-header"><div class="platform-preview-avatar">HB</div>'
@@ -381,18 +365,18 @@ var CreateFlow = (function () {
         + '<div class="platform-preview-body" contenteditable="true" oninput="cfFlow().editContent=this.innerText">' + text.replace(/\n/g, '<br>') + '</div></div>';
     }
     if (f.modality === 'image' && window.StudioImage && StudioImage.renderPreview) {
-      return cfPrefBar() + '<div class="cf-step-title">Edit your visual</div><div class="cf-step-sub">Click headline to edit · brand kit applied</div>' + storyStrip
+      return banner + '<div class="cf-step-title">Edit your visual</div><div class="cf-step-sub">Click headline to edit · brand kit applied</div>' + storyStrip
         + cfBriefSignalBar(true)
         + '<div class="cf-edit-canvas">' + StudioImage.renderPreview(v.theme, f.aspect || '1:1', v.headline, true) + '</div>';
     }
     if (f.modality === 'video') {
-      return cfPrefBar() + '<div class="cf-step-title">Refine your cut</div><div class="cf-step-sub">' + v.title + ' · ' + v.dur + '</div>' + storyStrip
+      return banner + '<div class="cf-step-title">Refine your cut</div><div class="cf-step-sub">' + v.title + ' · ' + v.dur + '</div>' + storyStrip
         + cfBriefSignalBar(true)
         + '<div class="cf-video-player">▶<span>Preview</span></div>'
         + '<div class="cf-field" style="max-width:480px;margin-top:16px;"><label>Refinement notes</label>'
         + '<textarea placeholder="Punchier hook, add captions…" oninput="cfFlow().editContent=this.value">' + (f.editContent || '') + '</textarea></div>';
     }
-    return cfPrefBar() + '<div class="cf-step-title">Edit your episode</div><div class="cf-step-sub">' + v.title + ' · ' + v.dur + '</div>' + storyStrip
+    return banner + '<div class="cf-step-title">Edit your episode</div><div class="cf-step-sub">' + v.title + ' · ' + v.dur + '</div>' + storyStrip
       + cfBriefSignalBar(true)
       + '<div class="cf-audio-edit"><div style="font-weight:600;margin-bottom:12px;">Ep 14: ' + appState.createBrief.goal + '</div>'
       + '<div class="cf-waveform">' + [40,65,55,80,45,70,50,75,60,85,48,72,55,78,62,88].map(function(h){ return '<span style="height:'+h+'%"></span>'; }).join('') + '</div></div>';
@@ -407,8 +391,7 @@ var CreateFlow = (function () {
       { name: f.platform, status: 'Connected', ok: true },
       { name: 'Campaign hub', status: 'Ready', ok: true }
     ];
-    return cfPrefBar()
-      + '<div class="cf-step-title">Review & publish</div>'
+    return cfCampaignPromoBanner()      + '<div class="cf-step-title">Review & publish</div>'
       + '<div class="cf-step-sub">' + f.platform + ' · ' + f.format + ' · ' + pf + ' PF · Brand-safe ✓</div>'
       + '<div class="cf-publish-layout">'
       + '<div class="cf-publish-preview card">'
@@ -584,7 +567,8 @@ var CreateFlow = (function () {
     appState.createFlow = {
       step: 1, modality: null, platform: null, format: null, aspect: '1:1', dims: '',
       generating: false, genPhase: 0, variation: null, editContent: '',
-      published: false, publishMode: null, genStartedAt: null
+      published: false, publishMode: null, genStartedAt: null,
+      campaignBannerDismissed: false
     };
     nav('create-flow');
   };
@@ -670,6 +654,69 @@ var CreateFlow = (function () {
     }
   };
 
+  function cfCampaignPromoBanner() {
+    if (cfFlow().campaignBannerDismissed) return '';
+    var brief = appState.createBrief;
+    var name = brief.goal || 'this content';
+    return '<div class="cf-campaign-promo">'
+      + '<div class="cf-campaign-promo-left">'
+      + '<div class="cf-campaign-promo-icon">&#128640;</div>'
+      + '<div class="cf-campaign-promo-text">'
+      + '<div class="cf-campaign-promo-title">Want this across more platforms too? Turn this into a campaign.</div>'
+      + '<div class="cf-campaign-promo-sub">Brief, persona &amp; objectives will carry over — just pick your platforms.</div>'
+      + '</div></div>'
+      + '<div class="cf-campaign-promo-actions">'
+      + '<button class="btn btn-primary btn-sm" onclick="cfStartCampaignFromCreate()">Start a campaign with this</button>'
+      + '<button class="cf-campaign-promo-dismiss" onclick="cfDismissCampaignBanner()" title="Dismiss">&#x2715;</button>'
+      + '</div></div>';
+  }
+
+  window.cfDismissCampaignBanner = function () {
+    cfFlow().campaignBannerDismissed = true;
+    renderContent();
+  };
+
+  window.cfToggleSidebar = function () {
+    appState.cfSidebarOpen = !appState.cfSidebarOpen;
+    renderContent();
+  };
+
+  window.cfStartCampaignFromCreate = function () {
+    var brief = appState.createBrief;
+    var campaignName = brief.goal || appState.cfCampaign || 'New Campaign';
+    if (!appState.campaigns) appState.campaigns = [];
+    appState.campaignUI = { mode: 'flow', selectedId: null };
+    appState.campaignFlow = {
+      step: 1,
+      name: campaignName,
+      objective: 'Launch',
+      startDate: '2026-07-01',
+      endDate: '2026-07-14',
+      platforms: [],
+      assetMix: [],
+      mixInitialized: false,
+      claraThinking: false,
+      claraSuggested: false,
+      brief: {
+        shared: {
+          objective: brief.goal || '',
+          persona: brief.persona || '',
+          message: brief.message || '',
+          proof: brief.proof || '',
+          cta: brief.cta || ''
+        },
+        overrides: {}
+      },
+      batchGenerating: false,
+      batchDone: 0,
+      batchTotal: 0,
+      generatedAssets: [],
+      editingAssetId: null,
+      editDraft: null
+    };
+    nav('campaign');
+  };
+
   function cfCanContinue() {
     var f = cfFlow();
     if (f.step === 1) return !!f.modality;
@@ -705,7 +752,7 @@ var CreateFlow = (function () {
       + '<span class="create-status"><span class="create-status-dot"></span> ' + appState.intelligence.brand + '</span>'
       + '<button class="btn btn-outline btn-sm" onclick="cfOpenPrefs()">&#9881; Preferences</button>'
       + '</div></div>'
-      + '<div class="cf-body"><div class="cf-main">' + cfStepper() + content + '</div>' + cfIntelRail() + '</div>'
+      + '<div class="cf-body' + (appState.cfSidebarOpen ? '' : ' cf-sidebar-collapsed') + '"><div class="cf-main">' + (f.step > 1 ? cfStepper() : '') + content + '</div>' + cfIntelRail() + '</div>'
       + footer + cfRenderPrefDrawer() + '</div>';
   }
 

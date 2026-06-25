@@ -18,6 +18,33 @@ var CampaignFlow = (function () {
     X: [{ key: 'x-post', label: 'X posts', count: 4 }],
     YouTube: [{ key: 'yt-video', label: 'YouTube videos', count: 1 }]
   };
+  var _claraTimer = null;
+  var _cpLiveInterval = null;
+  var _cpLiveStats = {};
+
+  function cpInitLiveStat(id) {
+    if (!_cpLiveStats[id]) {
+      _cpLiveStats[id] = { views: 180 + Math.floor(Math.random() * 140) };
+    }
+  }
+  function cpStartLiveInterval() {
+    if (_cpLiveInterval) return;
+    _cpLiveInterval = setInterval(function () {
+      if (appState.screen !== 'campaign') {
+        clearInterval(_cpLiveInterval);
+        _cpLiveInterval = null;
+        return;
+      }
+      var all = (appState.campaigns || []).concat(CP_SAMPLE_CAMPAIGNS);
+      all.forEach(function (c) {
+        if (cpCampaignStatusForCard(c) !== 'Live') return;
+        cpInitLiveStat(c.id);
+        _cpLiveStats[c.id].views += Math.floor(Math.random() * 7) + 1;
+        var el = document.getElementById('cp-live-stat-' + c.id);
+        if (el) el.textContent = _cpLiveStats[c.id].views + ' views today';
+      });
+    }, 3000);
+  }
 
   function cpSeedSampleAssets(platforms, startDate, message, allApproved, limits) {
     var assets = [];
@@ -55,9 +82,9 @@ var CampaignFlow = (function () {
       id: 'sample-summer-launch',
       name: 'Summer Launch Sprint',
       goal: 'Launch',
-      startDate: '2026-07-01',
+      startDate: '2026-06-18',
       endDate: '2026-07-14',
-      status: 'Scheduled',
+      status: 'Live',
       isSample: true,
       platforms: ['LinkedIn', 'Instagram', 'Email', 'X'],
       brief: {
@@ -175,34 +202,57 @@ var CampaignFlow = (function () {
       cta: baseBrief.cta || 'Pre-order now — closes Friday at 6 PM.'
     };
   }
-  function cpHandoffBlock(intel, brief, objective) {
+  function cpIntelHandoffCards(intel, brief, objective) {
+    var i = intel || {};
+    var persona = i.persona && i.persona.name ? i.persona : null;
+    var market = i.market && i.market.whiteSpace ? i.market : null;
+    var consumer = i.consumer && i.consumer.trigger ? i.consumer : null;
+    var filled = (persona ? 1 : 0) + (market ? 1 : 0) + (consumer ? 1 : 0);
+
+    var badge = filled === 3
+      ? '<span class="pill pill-green">Intelligence Synced ✓</span>'
+      : filled > 0
+        ? '<span class="pill pill-amber">' + filled + ' of 3 sections filled</span>'
+        : '<span class="pill pill-muted">No intelligence yet</span>';
+
+    var title = filled === 3
+      ? 'Everything is ready — plan this campaign'
+      : 'Add research context to sharpen generation';
+
+    function ph(section, label, generateFn) {
+      return '<div class="cf-handoff-item cp-intel-ph">'
+        + '<span>' + label + '</span>'
+        + '<div class="cp-intel-ph-empty">No ' + section + ' data yet</div>'
+        + '<button class="btn btn-outline btn-sm cp-intel-ph-btn" onclick="' + generateFn + '()">Generate this now</button>'
+        + '</div>';
+    }
+
+    var personaCard = persona
+      ? '<div class="cf-handoff-item"><span>Persona locked</span><strong>' + persona.name + '</strong><em>' + persona.seg + '</em></div>'
+      : ph('persona', 'Persona', 'campaignGeneratePersona');
+
+    var marketCard = market
+      ? '<div class="cf-handoff-item"><span>Market signal</span><strong>' + market.whiteSpace + '</strong><em>' + market.gap + '</em></div>'
+      : ph('market', 'Market signal', 'campaignGenerateMarket');
+
+    var consumerCard = consumer
+      ? '<div class="cf-handoff-item"><span>Consumer trigger</span><strong>' + consumer.trigger + '</strong><em>Campaign goal: ' + (objective || (brief && brief.goal) || 'Not set') + '</em></div>'
+      : ph('consumer', 'Consumer trigger', 'campaignGenerateConsumer');
+
     return '<div class="cf-handoff">'
       + '<div class="cf-handoff-head">'
-      + '<div><div class="cf-handoff-eyebrow">R&D and strategy complete</div><div class="cf-handoff-title">Everything is ready — plan this campaign</div></div>'
-      + '<span class="pill pill-green">Intelligence Synced ✓</span>'
+      + '<div><div class="cf-handoff-eyebrow">R&amp;D and strategy</div><div class="cf-handoff-title">' + title + '</div></div>'
+      + badge
       + '</div>'
-      + '<div class="cf-handoff-grid">'
-      + '<div class="cf-handoff-item"><span>Persona locked</span><strong>' + intel.persona.name + '</strong><em>' + intel.persona.seg + '</em></div>'
-      + '<div class="cf-handoff-item"><span>Market signal</span><strong>' + intel.market.whiteSpace + '</strong><em>' + intel.market.gap + '</em></div>'
-      + '<div class="cf-handoff-item"><span>Consumer trigger</span><strong>' + intel.consumer.trigger + '</strong><em>Campaign goal: ' + (objective || brief.goal || 'Not set') + '</em></div>'
-      + '</div>'
-      + '<div class="cf-handoff-foot">'
-      + '<span class="pill pill-muted">Strategy synced to campaign</span>'
-      + '<span class="pill pill-muted">Persona applied across channels</span>'
-      + '<span class="pill pill-muted">Brief pre-seeded from research</span>'
-      + '</div>'
+      + '<div class="cf-handoff-grid">' + personaCard + marketCard + consumerCard + '</div>'
+      + (filled === 3
+        ? '<div class="cf-handoff-foot">'
+          + '<span class="pill pill-muted">Strategy synced to campaign</span>'
+          + '<span class="pill pill-muted">Persona applied across channels</span>'
+          + '<span class="pill pill-muted">Brief pre-seeded from research</span>'
+          + '</div>'
+        : '')
       + '</div>';
-  }
-  function cpIntelGateBlock() {
-    return '<div class="cp-step-title">Campaign setup</div>'
-      + '<div class="cp-step-sub">Intelligence context is required before campaign planning can begin.</div>'
-      + '<div class="card cp-intel-gate">'
-      + '<div class="cp-intel-gate-title">Research is required before content generation</div>'
-      + '<p class="cp-intel-gate-copy">Please complete Intelligence setup first so the content engine can generate output for the right audience and business goal.</p>'
-      + '<div class="cp-intel-gate-actions">'
-      + '<button class="btn btn-primary" onclick="campaignStartIntelligenceSetup()">Start Intelligence Setup</button>'
-      + '<button class="btn btn-outline" onclick="campaignUseSampleIntelligence()">Use Sample Intelligence for Demo</button>'
-      + '</div></div>';
   }
   function cpApplyBriefFromIntelligence() {
     cpFlow().brief.shared = cpBriefFromIntelligence(appState);
@@ -240,6 +290,9 @@ var CampaignFlow = (function () {
       platforms: [],
       assetMix: [],
       mixInitialized: false,
+      claraThinking: false,
+      claraSuggested: false,
+      intelBannerPending: false,
       brief: {
         shared: cpBriefFromIntelligence(state),
         overrides: {}
@@ -255,6 +308,7 @@ var CampaignFlow = (function () {
   function init(state) {
     if (!state.campaigns) state.campaigns = [];
     state.campaignUI = { mode: 'home', selectedId: null };
+    if (typeof state.cpSidebarOpen === 'undefined') state.cpSidebarOpen = true;
     state.campaignFlow = cpFreshFlow(state);
   }
 
@@ -284,6 +338,49 @@ var CampaignFlow = (function () {
     }
   }
 
+  function cpClaraAutoFill() {
+    var f = cpFlow();
+    f.claraThinking = false;
+    var text = ((f.name || '') + ' ' + (f.objective || '')).toLowerCase();
+
+    var platforms, heavierMix;
+    if (/launch|product/.test(text)) {
+      platforms = ['LinkedIn', 'Email', 'Instagram'];
+      heavierMix = true;
+    } else if (/awareness|brand/.test(text)) {
+      platforms = ['LinkedIn', 'X'];
+      heavierMix = false;
+    } else if (/sale|promo/.test(text)) {
+      platforms = ['Instagram', 'Facebook', 'Email'];
+      heavierMix = false;
+    } else {
+      f.claraSuggested = false;
+      return;
+    }
+
+    f.platforms = platforms.slice();
+    f.assetMix = [];
+    f.mixInitialized = true;
+
+    platforms.forEach(function (p) {
+      var cards = cpDefaultMixCards(p);
+      if (heavierMix) {
+        cards = cards.map(function (c) {
+          return { id: c.id, platform: c.platform, label: c.label, count: c.count + 2 };
+        });
+      }
+      f.assetMix = f.assetMix.concat(cards);
+    });
+
+    platforms.forEach(function (p) {
+      if (!f.brief.overrides[p]) {
+        f.brief.overrides[p] = { expanded: false, fields: {} };
+      }
+    });
+
+    f.claraSuggested = true;
+  }
+
   function cpStepper() {
     var step = cpFlow().step;
     var html = '<div class="cf-stepper-wrap"><div class="wizard-steps">';
@@ -299,27 +396,32 @@ var CampaignFlow = (function () {
   }
 
   function cpStepGoalTiming() {
-    if (!cpHasIntelligence()) return cpIntelGateBlock();
     var f = cpFlow();
-    var intel = appState.intelligence;
-    var brief = appState.createBrief || {};
-    return cpHandoffBlock(intel, brief, f.objective)
-      + '<div class="cp-step-title">Campaign setup</div>'
+    var claraIndicator = '';
+    if (f.claraThinking) {
+      claraIndicator = '<div class="clara-thinking"><span class="clara-thinking-dot"></span>Clara is thinking\u2026</div>';
+    } else if (f.claraSuggested) {
+      claraIndicator = '<div class="clara-ready"><span>\u2736</span> Clara pre-filled Platforms &amp; Asset Mix \u2014 tweak freely on the next steps.</div>';
+    }
+    return '<div class="cp-step-title">Campaign setup</div>'
       + '<div class="cp-step-sub">Define goal and timing for this campaign.</div>'
       + '<div class="cp-form">'
-      + '<div class="cp-field"><label>Campaign name</label><input value="' + f.name + '" oninput="campaignSetField(\'name\',this.value)"></div>'
-      + '<div class="cp-field"><label>Objective</label><select onchange="campaignSetField(\'objective\',this.value)">'
+      + '<div class="cp-field"><label>Campaign name</label><input value="' + f.name + '" onblur="campaignNameBlur(this.value)"></div>'
+      + '<div class="cp-field"><label>Objective</label><select onchange="campaignSetObjective(this.value)">'
       + CP_OBJECTIVES.map(function (o) { return '<option' + (f.objective === o ? ' selected' : '') + '>' + o + '</option>'; }).join('')
       + '</select></div>'
       + '<div class="cp-row">'
       + '<div class="cp-field"><label>Start date</label><input type="date" value="' + f.startDate + '" onchange="campaignSetField(\'startDate\',this.value)"></div>'
       + '<div class="cp-field"><label>End date</label><input type="date" value="' + f.endDate + '" onchange="campaignSetField(\'endDate\',this.value)"></div>'
-      + '</div></div>';
+      + '</div>'
+      + claraIndicator
+      + '</div>';
   }
 
   function cpStepPlatforms() {
     var f = cpFlow();
-    return '<div class="cp-step-title">Platforms</div>'
+    var claraBadge = f.claraSuggested ? '<span class="clara-badge">\u2736 Suggested by Clara</span>' : '';
+    return '<div class="cp-step-title">Platforms' + claraBadge + '</div>'
       + '<div class="cp-step-sub">Pick one or more channels for this campaign.</div>'
       + '<div class="platform-tile-grid">'
       + CP_PLATFORMS.map(function (p) {
@@ -337,7 +439,8 @@ var CampaignFlow = (function () {
   function cpStepAssetMix() {
     var f = cpFlow();
     cpEnsureDefaultMix();
-    return '<div class="cp-step-title">Asset mix</div>'
+    var claraBadge = f.claraSuggested ? '<span class="clara-badge">\u2736 Suggested by Clara</span>' : '';
+    return '<div class="cp-step-title">Asset mix' + claraBadge + '</div>'
       + '<div class="cp-step-sub">Suggested bundle based on selected platforms. You can adjust counts.</div>'
       + (f.assetMix.length ? '<div class="cp-mix-grid">'
         + f.assetMix.map(function (item, idx) {
@@ -361,7 +464,32 @@ var CampaignFlow = (function () {
       + '<div class="card"><p style="font-size:13px;color:var(--muted);line-height:1.6;">This step is intentionally left for the next implementation pass.</p></div>';
   }
 
-  window.campaignSetField = function (key, val) { cpFlow()[key] = val; renderContent(); };
+  function cpActivateClara() {
+    var f = cpFlow();
+    clearTimeout(_claraTimer);
+    f.claraThinking = true;
+    f.claraSuggested = false;
+    renderContent();
+    _claraTimer = setTimeout(function () {
+      cpClaraAutoFill();
+      renderContent();
+    }, 600);
+  }
+
+  window.campaignSetField = function (key, val) {
+    cpFlow()[key] = val;
+    renderContent();
+  };
+  window.campaignNameBlur = function (val) {
+    var f = cpFlow();
+    f.name = val;
+    cpActivateClara();
+  };
+  window.campaignSetObjective = function (val) {
+    var f = cpFlow();
+    f.objective = val;
+    cpActivateClara();
+  };
   window.campaignTogglePlatform = function (id) {
     var f = cpFlow();
     var had = f.platforms.indexOf(id) >= 0;
@@ -382,17 +510,20 @@ var CampaignFlow = (function () {
       }
     }
     if (!f.platforms.length) f.mixInitialized = false;
+    f.claraSuggested = false;
     renderContent();
   };
   window.campaignChangeMix = function (idx, delta) {
     var f = cpFlow();
     if (!f.assetMix[idx]) return;
     f.assetMix[idx].count = Math.max(1, f.assetMix[idx].count + delta);
+    f.claraSuggested = false;
     renderContent();
   };
   window.campaignRemoveMix = function (idx) {
     var f = cpFlow();
     f.assetMix.splice(idx, 1);
+    f.claraSuggested = false;
     renderContent();
   };
 
@@ -559,6 +690,20 @@ var CampaignFlow = (function () {
     var done = f.batchDone || 0;
     var progressText = 'Generating ' + done + ' of ' + total + ' assets...';
     var preview = f.generatedAssets.slice(0, 6);
+    if (f.intelBannerPending) {
+      return '<div class="cp-step-title">Generate</div>'
+        + '<div class="cp-step-sub">Ready to generate ' + total + ' asset' + (total === 1 ? '' : 's') + ' across ' + f.platforms.length + ' platform' + (f.platforms.length === 1 ? '' : 's') + '.</div>'
+        + '<div class="cp-intel-nudge">'
+        + '<div class="cp-intel-nudge-body">'
+        + '<div class="cp-intel-nudge-icon">&#128269;</div>'
+        + '<div><div class="cp-intel-nudge-title">Your results will be more accurate with research context.</div>'
+        + '<div class="cp-intel-nudge-sub">Complete Intelligence setup to sharpen persona fit and messaging across all generated assets.</div>'
+        + '</div></div>'
+        + '<div class="cp-intel-nudge-actions">'
+        + '<button class="btn btn-primary btn-sm" onclick="campaignIntelSetupNow()">Set up now</button>'
+        + '<button class="btn btn-ghost btn-sm" onclick="campaignIntelContinueAnyway()">Continue anyway</button>'
+        + '</div></div>';
+    }
     if (f.batchGenerating) {
       return '<div class="cp-step-title">Generate</div>'
         + '<div class="cp-step-sub">Batch generation using campaign brief defaults and per-platform overrides.</div>'
@@ -700,8 +845,14 @@ var CampaignFlow = (function () {
   function cpEnsurePublishDefaults() {
     var f = cpFlow();
     var start = f.startDate || cpTodayStr();
-    cpApprovedAssets().forEach(function (a, i) {
-      if (!a.scheduledDate) a.scheduledDate = cpAddDays(start, i);
+    var dayOffset = 0;
+    cpApprovedAssets().forEach(function (a) {
+      if (!a.scheduledDate && !a.unscheduled) {
+        a.scheduledDate = cpAddDays(start, dayOffset);
+        dayOffset++;
+      } else if (a.scheduledDate) {
+        dayOffset++;
+      }
     });
   }
   function cpConflictMap() {
@@ -726,7 +877,8 @@ var CampaignFlow = (function () {
   window.campaignSetAssetDate = function (id, dateVal) {
     var a = cpGetGeneratedAsset(id);
     if (!a) return;
-    a.scheduledDate = dateVal;
+    a.scheduledDate = dateVal || null;
+    a.unscheduled = !dateVal;
     renderContent();
   };
   window.campaignAutoSpread = function () {
@@ -749,6 +901,55 @@ var CampaignFlow = (function () {
     });
     renderContent();
   };
+  var _cpDragId = null;
+
+  window.cpDragStart = function (id, event) {
+    _cpDragId = id;
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', id);
+  };
+  window.cpDragEnterRow = function (el) {
+    el._cpDragCount = (el._cpDragCount || 0) + 1;
+    el.classList.add('cp-drag-over');
+  };
+  window.cpDragLeaveRow = function (el) {
+    el._cpDragCount = (el._cpDragCount || 0) - 1;
+    if (el._cpDragCount <= 0) { el._cpDragCount = 0; el.classList.remove('cp-drag-over'); }
+  };
+  window.cpDropOnRow = function (targetId, event) {
+    event.preventDefault();
+    event.currentTarget.classList.remove('cp-drag-over');
+    var dragId = _cpDragId;
+    _cpDragId = null;
+    if (!dragId || dragId === targetId) return;
+    var src = cpGetGeneratedAsset(dragId);
+    var tgt = cpGetGeneratedAsset(targetId);
+    if (!src || !tgt) return;
+    src.scheduledDate = tgt.scheduledDate || null;
+    src.unscheduled = !src.scheduledDate;
+    renderContent();
+  };
+  window.cpDragEnterTrash = function (el) {
+    el._cpDragCount = (el._cpDragCount || 0) + 1;
+    el.classList.add('cp-unschedule-active');
+  };
+  window.cpDragLeaveTrash = function (el) {
+    el._cpDragCount = (el._cpDragCount || 0) - 1;
+    if (el._cpDragCount <= 0) { el._cpDragCount = 0; el.classList.remove('cp-unschedule-active'); }
+  };
+  window.cpDropUnschedule = function (event) {
+    event.preventDefault();
+    event.currentTarget.classList.remove('cp-unschedule-active');
+    var dragId = _cpDragId;
+    _cpDragId = null;
+    if (!dragId) return;
+    var a = cpGetGeneratedAsset(dragId);
+    if (!a) return;
+    a.scheduledDate = null;
+    a.unscheduled = true;
+    renderContent();
+  };
+
   function cpCampaignStatusForPublish() {
     var today = cpTodayStr();
     var approved = cpApprovedAssets();
@@ -799,33 +1000,61 @@ var CampaignFlow = (function () {
     var approved = cpApprovedAssets();
     var conflicts = cpConflictMap();
     var hasConflicts = Object.keys(conflicts).length > 0;
+    var scheduledCount = approved.filter(function (a) { return !!a.scheduledDate; }).length;
+    if (!approved.length) {
+      return '<div class="cp-step-title">Publish</div>'
+        + '<div class="cp-step-sub">Schedule approved assets by platform and date before publishing campaign.</div>'
+        + '<div class="card"><div class="cf-history-empty" style="padding:16px 0 6px;">No approved assets yet. Go back to Edit and approve items first.</div>'
+        + '<div style="display:flex;justify-content:center;gap:10px;padding-bottom:10px;">'
+        + '<button class="btn btn-outline" onclick="campaignBack()">Back to Edit</button>'
+        + '<button class="btn btn-primary" onclick="campaignBulkApproveReady()">Approve all Ready now</button>'
+        + '</div></div>';
+    }
     return '<div class="cp-step-title">Publish</div>'
       + '<div class="cp-step-sub">Schedule approved assets by platform and date before publishing campaign.</div>'
-      + (approved.length ? '<div class="card">'
-        + '<div class="flex-between"><div><div class="label">Approved assets</div><div style="font-size:18px;font-weight:600;">' + approved.length + ' items ready to schedule</div></div>'
-        + (hasConflicts ? '<button class="btn btn-outline btn-sm" onclick="campaignAutoSpread()">Auto-spread schedule</button>' : '<span class="pill pill-green">No conflicts</span>')
-        + '</div>'
-        + '<div class="cp-publish-list">'
-        + approved.map(function (a) {
-            var conflictList = cpHasConflict(a, conflicts);
-            return '<div class="cp-publish-row">'
-              + '<div class="cp-publish-main"><div class="cp-generated-title">' + a.label + ' #' + a.seq + '</div><div class="cp-generated-msg">' + a.platform + ' · ' + (a.title || '').substring(0, 80) + '</div></div>'
-              + '<div class="cp-publish-date"><input type="date" value="' + (a.scheduledDate || '') + '" onchange="campaignSetAssetDate(\'' + a.id + '\',this.value)"></div>'
-              + '</div>'
-              + (conflictList ? '<div class="cp-conflict">Two ' + a.platform + ' posts on ' + cpFmtDate(a.scheduledDate) + ', consider spacing these out.</div>' : '');
-          }).join('')
-        + '</div>'
-        + '<div style="display:flex;justify-content:flex-end;margin-top:12px;"><button class="btn btn-primary" onclick="campaignPublishFinal()">Publish campaign</button></div>'
-        + '</div>'
-        : '<div class="card"><div class="cf-history-empty" style="padding:16px 0 6px;">No approved assets yet. Go back to Edit and approve items first.</div>'
-          + '<div style="display:flex;justify-content:center;gap:10px;padding-bottom:10px;">'
-          + '<button class="btn btn-outline" onclick="campaignBack()">Back to Edit</button>'
-          + '<button class="btn btn-primary" onclick="campaignBulkApproveReady()">Approve all Ready now</button>'
-          + '</div></div>');
+      + '<div class="card">'
+      + '<div class="flex-between"><div><div class="label">Approved assets</div>'
+      + '<div style="font-size:18px;font-weight:600;">' + scheduledCount + ' of ' + approved.length + ' scheduled</div></div>'
+      + (hasConflicts ? '<button class="btn btn-outline btn-sm" onclick="campaignAutoSpread()">Auto-spread schedule</button>' : '<span class="pill pill-green">No conflicts</span>')
+      + '</div>'
+      + (approved.length > 1 ? '<div class="cp-drag-hint"><span>⠿</span> Drag a row onto another to take that date · drop on the zone below to unschedule</div>' : '')
+      + '<div class="cp-publish-list">'
+      + approved.map(function (a) {
+          var conflictList = cpHasConflict(a, conflicts);
+          var dateCol = '<div class="cp-publish-date">'
+            + '<input type="date" value="' + (a.scheduledDate || '') + '"'
+            + (a.unscheduled ? ' class="cp-date-unscheduled"' : '')
+            + ' onchange="campaignSetAssetDate(\'' + a.id + '\',this.value)">'
+            + (a.unscheduled ? '<div class="cp-date-unscheduled-hint">+ Add date</div>' : '')
+            + '</div>';
+          return '<div class="cp-publish-row" draggable="true"'
+            + ' ondragstart="cpDragStart(\'' + a.id + '\',event)"'
+            + ' ondragover="event.preventDefault()"'
+            + ' ondragenter="cpDragEnterRow(this)"'
+            + ' ondragleave="cpDragLeaveRow(this)"'
+            + ' ondrop="cpDropOnRow(\'' + a.id + '\',event)">'
+            + '<div class="cp-drag-handle">⠿</div>'
+            + '<div class="cp-publish-main">'
+            + '<div class="cp-generated-title">' + a.label + ' #' + a.seq + '</div>'
+            + '<div class="cp-generated-msg">' + a.platform + ' · ' + (a.title || '').substring(0, 80) + '</div>'
+            + '</div>'
+            + dateCol
+            + '</div>'
+            + (conflictList ? '<div class="cp-conflict">Two ' + a.platform + ' posts on ' + cpFmtDate(a.scheduledDate) + ', consider spacing these out.</div>' : '');
+        }).join('')
+      + '</div>'
+      + '<div class="cp-unschedule-zone"'
+      + ' ondragover="event.preventDefault()"'
+      + ' ondragenter="cpDragEnterTrash(this)"'
+      + ' ondragleave="cpDragLeaveTrash(this)"'
+      + ' ondrop="cpDropUnschedule(event)">&#128465; Drop here to unschedule</div>'
+      + '<div style="display:flex;justify-content:flex-end;margin-top:12px;">'
+      + '<button class="btn btn-primary" onclick="campaignPublishFinal()">Publish campaign</button>'
+      + '</div>'
+      + '</div>';
   }
 
   function canContinue() {
-    if (!cpHasIntelligence()) return false;
     var f = cpFlow();
     if (f.step === 1) return !!f.name && !!f.objective && !!f.startDate && !!f.endDate;
     if (f.step === 2) return f.platforms.length > 0;
@@ -846,14 +1075,24 @@ var CampaignFlow = (function () {
 
   window.campaignBack = function () {
     var f = cpFlow();
-    if (f.step > 1) { f.step--; renderContent(); }
+    if (f.step > 1) {
+      if (f.step === 5) f.intelBannerPending = false;
+      f.step--;
+      renderContent();
+    }
   };
   window.campaignContinue = function () {
     var f = cpFlow();
     if (!canContinue()) return;
     if (f.step < 7) {
       f.step++;
-      if (f.step === 5) cpStartBatchGenerate();
+      if (f.step === 5) {
+        if (!cpHasIntelligence()) {
+          f.intelBannerPending = true;
+        } else {
+          cpStartBatchGenerate();
+        }
+      }
       renderContent();
     }
   };
@@ -870,6 +1109,41 @@ var CampaignFlow = (function () {
   };
   window.campaignStartIntelligenceSetup = function () {
     alert('Intelligence setup is outside this mockup. Use "Use Sample Intelligence for Demo" to load research context and continue.');
+  };
+  window.campaignResetIntelligence = function () {
+    appState.intelligence = null;
+    renderContent();
+  };
+  window.campaignIntelSetupNow = function () {
+    var f = cpFlow();
+    f.intelBannerPending = false;
+    appState.intelligence = JSON.parse(JSON.stringify(CP_SAMPLE_INTELLIGENCE));
+    cpApplyBriefFromIntelligence();
+    cpStartBatchGenerate();
+    renderContent();
+  };
+  window.campaignIntelContinueAnyway = function () {
+    var f = cpFlow();
+    f.intelBannerPending = false;
+    cpStartBatchGenerate();
+    renderContent();
+  };
+  window.campaignGeneratePersona = function () {
+    if (!appState.intelligence) appState.intelligence = {};
+    appState.intelligence.persona = JSON.parse(JSON.stringify(CP_SAMPLE_INTELLIGENCE.persona));
+    if (!appState.intelligence.brand) appState.intelligence.brand = CP_SAMPLE_INTELLIGENCE.brand;
+    cpApplyBriefFromIntelligence();
+    renderContent();
+  };
+  window.campaignGenerateMarket = function () {
+    if (!appState.intelligence) appState.intelligence = {};
+    appState.intelligence.market = JSON.parse(JSON.stringify(CP_SAMPLE_INTELLIGENCE.market));
+    renderContent();
+  };
+  window.campaignGenerateConsumer = function () {
+    if (!appState.intelligence) appState.intelligence = {};
+    appState.intelligence.consumer = JSON.parse(JSON.stringify(CP_SAMPLE_INTELLIGENCE.consumer));
+    renderContent();
   };
   window.campaignOpenDetail = function (id) {
     appState.campaignUI.mode = 'detail';
@@ -904,6 +1178,64 @@ var CampaignFlow = (function () {
     });
     return map;
   }
+  function cpHealthScore(c) {
+    var brief = (c.brief && c.brief.shared) || {};
+    var assets = c.assets || [];
+    var platforms = cpCampaignPlatforms(c);
+    var checks = [];
+
+    // 1. Shared brief is filled
+    var briefOk = !!(brief.objective && brief.persona && brief.message);
+    checks.push({ ok: briefOk, fail: 'Brief incomplete — objective, persona, or message missing' });
+
+    // 2. No unresolved scheduling conflicts among approved assets
+    var dateMap = {};
+    assets.forEach(function (a) {
+      if (a.approved && a.scheduledDate) {
+        var key = a.platform + '|' + a.scheduledDate;
+        dateMap[key] = (dateMap[key] || 0) + 1;
+      }
+    });
+    var conflictSlots = Object.keys(dateMap).filter(function (k) { return dateMap[k] > 1; }).length;
+    checks.push({ ok: conflictSlots === 0, fail: conflictSlots + ' scheduling conflict' + (conflictSlots === 1 ? '' : 's') + ' still unresolved' });
+
+    // 3. No assets flagged
+    var flagged = assets.filter(function (a) { return a.status === 'Flagged'; });
+    checks.push({ ok: flagged.length === 0, fail: flagged.length + ' post' + (flagged.length === 1 ? '' : 's') + ' still flagged' });
+
+    // 4. Every platform has at least one asset with a scheduled date
+    var unscheduled = platforms.filter(function (p) {
+      return !assets.some(function (a) { return a.platform === p && a.scheduledDate; });
+    });
+    checks.push({ ok: unscheduled.length === 0, fail: unscheduled.join(', ') + (unscheduled.length === 1 ? ' has' : ' have') + ' no scheduled posts' });
+
+    var passed = checks.filter(function (ch) { return ch.ok; }).length;
+    return {
+      score: passed * 25,
+      failures: checks.filter(function (ch) { return !ch.ok; }).map(function (ch) { return ch.fail; })
+    };
+  }
+
+  function cpHealthRing(score) {
+    var r = 38;
+    var circ = 2 * Math.PI * r;
+    var offset = circ * (1 - score / 100);
+    var color = score === 100 ? '#34d399' : score >= 75 ? '#f59e0b' : score >= 50 ? '#f97316' : '#ef4444';
+    var trackColor = 'rgba(255,255,255,0.08)';
+    return '<svg width="100" height="100" viewBox="0 0 100 100" style="display:block;">'
+      + '<circle cx="50" cy="50" r="' + r + '" fill="none" stroke="' + trackColor + '" stroke-width="8"/>'
+      + '<circle cx="50" cy="50" r="' + r + '" fill="none" stroke="' + color + '" stroke-width="8"'
+      + ' stroke-dasharray="' + circ.toFixed(2) + '"'
+      + ' stroke-dashoffset="' + offset.toFixed(2) + '"'
+      + ' stroke-linecap="round"'
+      + ' transform="rotate(-90 50 50)"/>'
+      + '<text x="50" y="47" text-anchor="middle" dominant-baseline="middle"'
+      + ' font-size="18" font-weight="700" fill="' + color + '" font-family="DM Sans,sans-serif">' + score + '%</text>'
+      + '<text x="50" y="63" text-anchor="middle" dominant-baseline="middle"'
+      + ' font-size="8.5" fill="rgba(255,255,255,0.4)" font-family="DM Sans,sans-serif" letter-spacing="0.08em">HEALTH</text>'
+      + '</svg>';
+  }
+
   function cpDetailAssetCard(a) {
     return '<div class="cp-generated-card">'
       + '<div class="cp-generated-top"><span class="pill pill-indigo">' + a.platform + '</span><span class="pill ' + cpStatusPill(a.status) + '">' + a.status + '</span></div>'
@@ -923,6 +1255,7 @@ var CampaignFlow = (function () {
     var approvedCount = (c.assets || []).filter(function (a) { return a.approved; }).length;
     var brief = (c.brief && c.brief.shared) || {};
     var sampleBadge = c.isSample ? '<span class="pill pill-muted" style="margin-left:8px;">Sample</span>' : '';
+    var health = cpHealthScore(c);
     var platformKpis = platforms.map(function (p) {
       var count = (grouped[p] || []).length;
       return '<div class="card cp-platform-kpi"><div class="label">' + p + '</div><div class="cp-kpi-val" style="font-size:20px;">' + count + '</div><div class="cp-campaign-meta">' + count + ' asset' + (count === 1 ? '' : 's') + '</div></div>';
@@ -934,16 +1267,34 @@ var CampaignFlow = (function () {
         + '<div class="cp-generated-grid">' + items.map(cpDetailAssetCard).join('') + '</div>'
         + '</div>';
     }).join('');
+    var healthCard = '<div class="card cp-health-card" style="margin-top:12px;">'
+      + '<div class="cp-health-ring-wrap">'
+      + cpHealthRing(health.score)
+      + '<div class="cp-health-ring-label">Campaign Health</div>'
+      + '</div>'
+      + '<div class="cp-health-body">'
+      + (health.score === 100
+        ? '<div class="cp-health-all-clear"><span>&#10003;</span> All systems go — campaign is fully ready to publish.</div>'
+        : '<div class="cp-health-body-title">Needs attention</div>'
+          + '<ul class="cp-health-failures">'
+          + health.failures.map(function (f) { return '<li>' + f + '</li>'; }).join('')
+          + '</ul>')
+      + '</div>'
+      + '</div>';
     return '<div class="screen"><div class="flex-between" style="margin-bottom:18px;">'
       + '<div><h1 class="screen-title">' + c.name + sampleBadge + '</h1><p class="screen-sub">' + c.goal + ' · ' + cpFmtDate(c.startDate) + ' to ' + cpFmtDate(c.endDate) + '</p></div>'
-      + '<div style="display:flex;gap:8px;"><button class="btn btn-outline" onclick="campaignBackHome()">← Campaigns</button><button class="btn btn-primary" onclick="campaignStartFlow()">+ New campaign</button></div>'
+      + '<div style="display:flex;align-items:center;gap:8px;"><button class="btn btn-outline" onclick="campaignBackHome()">← Campaigns</button><button class="btn btn-primary" onclick="campaignStartFlow()">+ New campaign</button><button class="cp-dev-btn" onclick="campaignResetIntelligence()" title="Dev only — clears intelligence for testing">&#9881; Reset Intel</button></div>'
       + '</div>'
       + '<div class="cp-detail-kpis cp-detail-kpis-wide">'
-      + '<div class="card"><div class="label">Status</div><div class="cp-kpi-val">' + status + '</div></div>'
+      + '<div class="card"><div class="label">Status</div>'
+      + '<div class="cp-kpi-val">' + (status === 'Live' ? '<span class="cp-live-dot"></span>' : '') + status + '</div>'
+      + (status === 'Live' ? '<div class="cp-live-stat-inline" style="margin-top:6px;"><span id="cp-live-stat-' + c.id + '">' + (_cpLiveStats[c.id] ? _cpLiveStats[c.id].views : '—') + ' views today</span></div>' : '')
+      + '</div>'
       + '<div class="card"><div class="label">Total assets</div><div class="cp-kpi-val">' + c.totalAssets + '</div></div>'
       + '<div class="card"><div class="label">Approved</div><div class="cp-kpi-val">' + approvedCount + '</div></div>'
       + '<div class="card"><div class="label">Platforms</div><div class="cp-kpi-val">' + platforms.length + '</div></div>'
       + '</div>'
+      + healthCard
       + (platforms.length ? '<div class="card" style="margin-top:12px;"><div class="label">Channel mix</div><div class="cp-detail-platforms">' + platforms.map(function (p) { return '<span class="pill pill-indigo">' + p + '</span>'; }).join('') + '</div><div class="cp-platform-kpi-grid" style="margin-top:12px;">' + platformKpis + '</div></div>' : '')
       + (brief.message ? '<div class="card cp-detail-brief" style="margin-top:12px;"><div class="label">Campaign brief</div>'
         + '<div class="cp-brief-summary"><div><span class="cp-brief-key">Objective</span>' + (brief.objective || '—') + '</div>'
@@ -960,7 +1311,10 @@ var CampaignFlow = (function () {
     var sample = CP_SAMPLE_CAMPAIGNS;
     var header = '<div class="flex-between" style="margin-bottom:18px;">'
       + '<div><h1 class="screen-title">Campaigns</h1><p class="screen-sub">Plan, generate, edit, and publish campaign assets in one flow</p></div>'
-      + '<button class="btn btn-primary" onclick="campaignStartFlow()">+ Create campaign</button></div>';
+      + '<div style="display:flex;align-items:center;gap:8px;">'
+      + '<button class="btn btn-primary" onclick="campaignStartFlow()">+ Create campaign</button>'
+      + '<button class="cp-dev-btn" onclick="campaignResetIntelligence()" title="Dev only — clears intelligence for testing">&#9881; Reset Intel</button>'
+      + '</div></div>';
     if (!campaigns.length) {
       return '<div class="screen">' + header
         + '<div class="cp-home-hero">'
@@ -970,10 +1324,15 @@ var CampaignFlow = (function () {
         + '<div class="label" style="margin-top:16px;">Sample campaigns</div>'
         + '<div class="cp-campaign-list">'
         + sample.map(function (c) {
+            var isLive = c.status === 'Live';
+            var statusPill = '<span class="pill ' + (isLive ? 'pill-green' : c.status === 'Scheduled' ? 'pill-indigo' : 'pill-muted') + '">'
+              + (isLive ? '<span class="cp-live-dot"></span>' : '') + c.status + '</span>';
+            var liveLine = isLive ? '<div class="cp-live-stat"><span id="cp-live-stat-' + c.id + '">' + (_cpLiveStats[c.id] ? _cpLiveStats[c.id].views : '—') + ' views today</span></div>' : '';
             return '<div class="cp-campaign-card" onclick="campaignOpenDetail(\'' + c.id + '\')">'
-              + '<div class="flex-between"><div class="cp-campaign-name">' + c.name + '</div><span class="pill ' + (c.status === 'Live' ? 'pill-green' : c.status === 'Scheduled' ? 'pill-indigo' : 'pill-muted') + '">' + c.status + '</span></div>'
+              + '<div class="flex-between"><div class="cp-campaign-name">' + c.name + '</div>' + statusPill + '</div>'
               + '<div class="cp-campaign-meta">' + c.goal + ' · ' + cpFmtDate(c.startDate) + ' to ' + cpFmtDate(c.endDate) + '</div>'
               + '<div class="cp-campaign-meta">' + c.totalAssets + ' assets · ' + cpCampaignPlatforms(c).join(', ') + '</div>'
+              + liveLine
               + '</div>';
           }).join('')
         + '</div></div>';
@@ -983,14 +1342,73 @@ var CampaignFlow = (function () {
       + '<div class="cp-campaign-list">'
       + campaigns.map(function (c) {
           var status = cpCampaignStatusForCard(c);
+          var isLive = status === 'Live';
+          var statusPill = '<span class="pill ' + (status === 'Done' ? 'pill-muted' : isLive ? 'pill-green' : 'pill-indigo') + '">'
+            + (isLive ? '<span class="cp-live-dot"></span>' : '') + status + '</span>';
+          var liveLine = isLive ? '<div class="cp-live-stat"><span id="cp-live-stat-' + c.id + '">' + (_cpLiveStats[c.id] ? _cpLiveStats[c.id].views : '—') + ' views today</span></div>' : '';
           return '<div class="cp-campaign-card" onclick="campaignOpenDetail(\'' + c.id + '\')">'
-            + '<div class="flex-between"><div class="cp-campaign-name">' + c.name + '</div><span class="pill ' + (status === 'Done' ? 'pill-muted' : status === 'Live' ? 'pill-green' : 'pill-indigo') + '">' + status + '</span></div>'
+            + '<div class="flex-between"><div class="cp-campaign-name">' + c.name + '</div>' + statusPill + '</div>'
             + '<div class="cp-campaign-meta">' + c.goal + ' · ' + cpFmtDate(c.startDate) + ' to ' + cpFmtDate(c.endDate) + '</div>'
             + '<div class="cp-campaign-meta">' + c.totalAssets + ' assets' + (cpCampaignPlatforms(c).length ? ' · ' + cpCampaignPlatforms(c).join(', ') : '') + '</div>'
+            + liveLine
             + '</div>';
         }).join('')
       + '</div></div>';
   }
+  function cpIntelRail() {
+    var intel = appState.intelligence || {};
+    var persona = intel.persona || {};
+    var market = intel.market || {};
+    var consumer = intel.consumer || {};
+    var f = cpFlow();
+    var shared = (f && f.brief && f.brief.shared) || {};
+    var p = appState.cfPrefs || {};
+    var hasIntel = cpHasIntelligence();
+
+    function block(label, body) {
+      return '<div class="cf-intel-block"><div class="label">' + label + '</div>' + body + '</div>';
+    }
+    function phBlock(label, msg) {
+      return '<div class="cf-intel-block"><div class="label">' + label + '</div>'
+        + '<div class="cf-intel-text" style="font-style:italic;opacity:0.8;">' + msg + '</div></div>';
+    }
+
+    var personaBlock = persona.name
+      ? block('Persona', '<div class="cf-intel-persona">' + persona.name + '</div><div class="cf-intel-text">' + (persona.seg || '') + '</div>')
+      : phBlock('Persona', 'No persona data yet');
+    var marketBlock = market.whiteSpace
+      ? block('Market', '<div class="cf-intel-text">' + market.whiteSpace + '</div>')
+      : phBlock('Market', 'No market signal yet');
+    var consumerBlock = consumer.trigger
+      ? block('Consumer', '<div class="cf-intel-text">' + consumer.trigger + '</div>')
+      : phBlock('Consumer', 'No consumer trigger yet');
+
+    var briefBlock = block('Campaign brief',
+      '<div class="cf-intel-text"><strong style="color:var(--text);">' + (shared.objective || f.name || 'Untitled campaign') + '</strong>'
+      + (shared.message ? '<br><br>' + shared.message : '') + '</div>');
+
+    var prefsBlock = (p.style || p.tones)
+      ? block('Preferences', '<div class="cf-intel-text">' + (p.style || 'Default') + (p.tones && p.tones[0] ? ' · ' + p.tones[0] : '')
+        + '<br>Brand kit ' + (p.brandKitLock ? 'locked ✓' : 'off') + '</div>')
+      : '';
+
+    var evidence = '';
+    if (market.gap) evidence += '<div class="evidence-item"><div class="evidence-tag research">research</div><div class="evidence-text">' + market.gap + '</div></div>';
+    if (consumer.research) evidence += '<div class="evidence-item"><div class="evidence-tag social">consumer</div><div class="evidence-text">' + consumer.research + '</div></div>';
+
+    return '<button class="cf-rail-reopen" onclick="cpToggleSidebar()" title="Show intelligence">&#10094;</button>'
+      + '<div class="cf-intel-rail">'
+      + '<button class="cf-rail-toggle" onclick="cpToggleSidebar()" title="Hide intelligence">&#10095;</button>'
+      + '<div class="cf-intel-rail-head"' + (hasIntel ? '' : ' style="color:var(--muted);"') + '>' + (hasIntel ? '● Intelligence active' : '○ Intelligence pending') + '</div>'
+      + personaBlock + marketBlock + consumerBlock + briefBlock + prefsBlock + evidence
+      + '</div>';
+  }
+
+  window.cpToggleSidebar = function () {
+    appState.cpSidebarOpen = !appState.cpSidebarOpen;
+    renderContent();
+  };
+
   function cpScreenFlow() {
     var f = cpFlow();
     var content = f.step === 1 ? cpStepGoalTiming()
@@ -1004,8 +1422,10 @@ var CampaignFlow = (function () {
       + '<div class="cf-topbar"><div class="cf-brand">Clarity <span>Content Studio</span></div>'
       + '<div class="cf-topbar-right"><span class="create-status"><span class="create-status-dot"></span> '
       + (cpHasIntelligence() && appState.intelligence.brand ? appState.intelligence.brand + ' · ' : '')
-      + 'Campaign Builder</span></div></div>'
-      + '<div class="cp-body"><div class="cp-main">' + cpStepper() + content + '</div></div>'
+      + 'Campaign Builder</span>'
+      + '<button class="cp-dev-btn" onclick="campaignResetIntelligence()" title="Dev only — clears intelligence for testing">&#9881; Reset Intel</button>'
+      + '</div></div>'
+      + '<div class="cf-body cp-flow-body' + (appState.cpSidebarOpen ? '' : ' cf-sidebar-collapsed') + '"><div class="cp-main">' + cpStepper() + content + '</div>' + cpIntelRail() + '</div>'
       + '<div class="cf-footer">'
       + '<button class="btn btn-outline"' + (f.step <= 1 ? ' disabled style="opacity:0.35;"' : '') + ' onclick="campaignBack()">← Back</button>'
       + '<div class="cf-footer-mid"><span class="cf-eta">Campaign flow · 7 steps</span></div>'
@@ -1016,6 +1436,12 @@ var CampaignFlow = (function () {
 
   function screenCampaign() {
     var ui = appState.campaignUI || { mode: 'home' };
+    var all = (appState.campaigns || []).concat(CP_SAMPLE_CAMPAIGNS);
+    var hasLive = all.some(function (c) { return cpCampaignStatusForCard(c) === 'Live'; });
+    if (hasLive && (ui.mode === 'home' || ui.mode === 'detail')) {
+      all.forEach(function (c) { if (cpCampaignStatusForCard(c) === 'Live') cpInitLiveStat(c.id); });
+      cpStartLiveInterval();
+    }
     if (ui.mode === 'flow') return cpScreenFlow();
     if (ui.mode === 'detail') return cpScreenDetail();
     return cpScreenHome();
