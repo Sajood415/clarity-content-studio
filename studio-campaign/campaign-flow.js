@@ -96,8 +96,8 @@ var CampaignFlow = (function () {
       id: 'sample-summer-launch',
       name: 'Summer Launch Sprint',
       goal: 'Launch',
-      startDate: '2026-06-18',
-      endDate: '2026-07-14',
+      startDate: '2026-06-18', startTime: '09:00',
+      endDate: '2026-07-14', endTime: '17:00',
       status: 'Live',
       isSample: true,
       platforms: ['LinkedIn', 'Instagram', 'Email', 'X'],
@@ -121,8 +121,8 @@ var CampaignFlow = (function () {
       id: 'sample-weekend-reengage',
       name: 'Weekend Re-engagement Push',
       goal: 'Re-engagement',
-      startDate: '2026-07-20',
-      endDate: '2026-07-31',
+      startDate: '2026-07-20', startTime: '08:00',
+      endDate: '2026-07-31', endTime: '20:00',
       status: 'Draft',
       isSample: true,
       platforms: ['Facebook', 'Instagram', 'Email', 'X'],
@@ -147,8 +147,8 @@ var CampaignFlow = (function () {
       id: 'sample-bakery-stories',
       name: 'Bakery Community Stories',
       goal: 'Community',
-      startDate: '2026-08-03',
-      endDate: '2026-08-18',
+      startDate: '2026-08-03', startTime: '10:00',
+      endDate: '2026-08-18', endTime: '18:00',
       status: 'Live',
       isSample: true,
       platforms: ['Instagram', 'Facebook', 'YouTube', 'LinkedIn', 'X'],
@@ -292,15 +292,23 @@ var CampaignFlow = (function () {
     var d = new Date(dateStr + 'T00:00:00');
     if (isNaN(d.getTime())) return dateStr;
     var mon = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][d.getMonth()];
-    return mon + ' ' + d.getDate();
+    return mon + ' ' + d.getDate() + ', ' + d.getFullYear();
+  }
+  function cpFmtTime(t) {
+    if (!t) return '';
+    var parts = t.split(':');
+    var h = parseInt(parts[0], 10), m = parts[1] || '00';
+    var ampm = h >= 12 ? 'PM' : 'AM';
+    var h12 = h % 12 || 12;
+    return h12 + ':' + m + ' ' + ampm;
   }
   function cpFreshFlow(state) {
     return {
       step: 1,
       name: 'Summer Launch Sprint',
       objective: 'Launch',
-      startDate: '2026-07-01',
-      endDate: '2026-07-14',
+      startDate: '2026-07-01', startTime: '09:00',
+      endDate: '2026-07-14', endTime: '17:00',
       platforms: [],
       assetMix: [],
       mixInitialized: false,
@@ -427,7 +435,11 @@ var CampaignFlow = (function () {
       + '</select></div>'
       + '<div class="cp-row">'
       + '<div class="cp-field"><label>Start date</label><input type="date" value="' + f.startDate + '" onchange="campaignSetField(\'startDate\',this.value)"></div>'
+      + '<div class="cp-field"><label>Start time</label><input type="time" value="' + (f.startTime || '09:00') + '" onchange="campaignSetField(\'startTime\',this.value)"></div>'
+      + '</div>'
+      + '<div class="cp-row">'
       + '<div class="cp-field"><label>End date</label><input type="date" value="' + f.endDate + '" onchange="campaignSetField(\'endDate\',this.value)"></div>'
+      + '<div class="cp-field"><label>End time</label><input type="time" value="' + (f.endTime || '17:00') + '" onchange="campaignSetField(\'endTime\',this.value)"></div>'
       + '</div>'
       + claraIndicator
       + '</div>'
@@ -1298,7 +1310,7 @@ var CampaignFlow = (function () {
       + '</div>'
       + '</div>';
     return '<div class="screen"><div class="flex-between" style="margin-bottom:18px;">'
-      + '<div><h1 class="screen-title">' + c.name + sampleBadge + '</h1><p class="screen-sub">' + c.goal + ' · ' + cpFmtDate(c.startDate) + ' to ' + cpFmtDate(c.endDate) + '</p></div>'
+      + '<div><h1 class="screen-title">' + c.name + sampleBadge + '</h1><p class="screen-sub">' + c.goal + ' · ' + cpFmtDate(c.startDate) + (c.startTime ? ' ' + cpFmtTime(c.startTime) : '') + ' → ' + cpFmtDate(c.endDate) + (c.endTime ? ' ' + cpFmtTime(c.endTime) : '') + '</p></div>'
       + '<div style="display:flex;align-items:center;gap:8px;"><button class="btn btn-outline" onclick="campaignBackHome()">← Campaigns</button><button class="btn btn-primary" onclick="campaignStartFlow()">+ New campaign</button><button class="cp-dev-btn" onclick="campaignResetIntelligence()" title="Dev only — clears intelligence for testing">&#9881; Reset Intel</button></div>'
       + '</div>'
       + '<div class="cp-detail-kpis cp-detail-kpis-wide">'
@@ -1347,7 +1359,7 @@ var CampaignFlow = (function () {
             return '<div class="cp-campaign-card" onclick="campaignOpenDetail(\'' + c.id + '\')">'
               + '<div class="flex-between"><div class="cp-campaign-name">' + c.name + '</div>' + statusPill + '</div>'
               + '<div class="cp-campaign-meta">' + c.goal + '</div>'
-              + '<div class="cp-campaign-dates">\uD83D\uDCC5 ' + cpFmtDate(c.startDate) + ' \u2192 ' + cpFmtDate(c.endDate) + '</div>'
+              + '<div class="cp-campaign-dates">\uD83D\uDCC5 ' + cpFmtDate(c.startDate) + (c.startTime ? ' \u00B7 ' + cpFmtTime(c.startTime) : '') + ' \u2192 ' + cpFmtDate(c.endDate) + (c.endTime ? ' \u00B7 ' + cpFmtTime(c.endTime) : '') + '</div>'
               + '<div class="cp-campaign-meta">' + c.totalAssets + ' assets · ' + cpCampaignPlatforms(c).join(', ') + '</div>'
               + liveLine
               + '</div>';
@@ -1366,7 +1378,7 @@ var CampaignFlow = (function () {
           return '<div class="cp-campaign-card" onclick="campaignOpenDetail(\'' + c.id + '\')">'
             + '<div class="flex-between"><div class="cp-campaign-name">' + c.name + '</div>' + statusPill + '</div>'
             + '<div class="cp-campaign-meta">' + c.goal + '</div>'
-            + '<div class="cp-campaign-dates">\uD83D\uDCC5 ' + cpFmtDate(c.startDate) + ' \u2192 ' + cpFmtDate(c.endDate) + '</div>'
+            + '<div class="cp-campaign-dates">\uD83D\uDCC5 ' + cpFmtDate(c.startDate) + (c.startTime ? ' \u00B7 ' + cpFmtTime(c.startTime) : '') + ' \u2192 ' + cpFmtDate(c.endDate) + (c.endTime ? ' \u00B7 ' + cpFmtTime(c.endTime) : '') + '</div>'
             + '<div class="cp-campaign-meta">' + c.totalAssets + ' assets' + (cpCampaignPlatforms(c).length ? ' · ' + cpCampaignPlatforms(c).join(', ') : '') + '</div>'
             + liveLine
             + '</div>';
