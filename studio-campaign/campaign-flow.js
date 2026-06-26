@@ -860,8 +860,7 @@ var CampaignFlow = (function () {
   }
 
   function cpSharedBriefFields(data) {
-    return '<div class="cp-field"><label>Objective</label><input value="' + (data.objective || '') + '" oninput="campaignSetBriefShared(\'objective\',this.value)"></div>'
-      + '<div class="cp-field"><label>Persona</label><input value="' + (data.persona || '') + '" oninput="campaignSetBriefShared(\'persona\',this.value)"></div>'
+    return '<div class="cp-field"><label>Persona</label><input value="' + (data.persona || '') + '" oninput="campaignSetBriefShared(\'persona\',this.value)"></div>'
       + '<div class="cp-field"><label>Message</label><textarea oninput="campaignSetBriefShared(\'message\',this.value)">' + (data.message || '') + '</textarea></div>'
       + '<div class="cp-row">'
       + '<div class="cp-field"><label>Proof</label><input value="' + (data.proof || '') + '" oninput="campaignSetBriefShared(\'proof\',this.value)"></div>'
@@ -870,8 +869,7 @@ var CampaignFlow = (function () {
   }
 
   function cpOverrideBriefFields(platform, data) {
-    return '<div class="cp-field"><label>Objective</label><input value="' + (data.objective || '') + '" oninput="campaignSetBriefOverride(\'' + platform + '\',\'objective\',this.value)"></div>'
-      + '<div class="cp-field"><label>Persona</label><input value="' + (data.persona || '') + '" oninput="campaignSetBriefOverride(\'' + platform + '\',\'persona\',this.value)"></div>'
+    return '<div class="cp-field"><label>Persona</label><input value="' + (data.persona || '') + '" oninput="campaignSetBriefOverride(\'' + platform + '\',\'persona\',this.value)"></div>'
       + '<div class="cp-field"><label>Message</label><textarea oninput="campaignSetBriefOverride(\'' + platform + '\',\'message\',this.value)">' + (data.message || '') + '</textarea></div>'
       + '<div class="cp-row">'
       + '<div class="cp-field"><label>Proof</label><input value="' + (data.proof || '') + '" oninput="campaignSetBriefOverride(\'' + platform + '\',\'proof\',this.value)"></div>'
@@ -880,8 +878,7 @@ var CampaignFlow = (function () {
   }
 
   function cpSeriesOverrideFields(seriesIdx, data) {
-    return '<div class="cp-field"><label>Objective</label><input value="' + (data.objective || '') + '" oninput="campaignSetSeriesBriefOverride(' + seriesIdx + ',\'objective\',this.value)"></div>'
-      + '<div class="cp-field"><label>Message</label><textarea oninput="campaignSetSeriesBriefOverride(' + seriesIdx + ',\'message\',this.value)">' + (data.message || '') + '</textarea></div>'
+    return '<div class="cp-field"><label>Message</label><textarea oninput="campaignSetSeriesBriefOverride(' + seriesIdx + ',\'message\',this.value)">' + (data.message || '') + '</textarea></div>'
       + '<div class="cp-row">'
       + '<div class="cp-field"><label>Proof</label><input value="' + (data.proof || '') + '" oninput="campaignSetSeriesBriefOverride(' + seriesIdx + ',\'proof\',this.value)"></div>'
       + '<div class="cp-field"><label>CTA</label><input value="' + (data.cta || '') + '" oninput="campaignSetSeriesBriefOverride(' + seriesIdx + ',\'cta\',this.value)"></div>'
@@ -1460,7 +1457,11 @@ var CampaignFlow = (function () {
     if (f.step === 2) return f.platforms.length > 0;
     if (f.step === 3) return f.series.length > 0 && f.series.every(function (s) { return !!s.name; });
     if (f.step === 4) return f.series.some(function (s) { return s.assetMix.length > 0; });
-    if (f.step === 5) return !!f.brief.shared.objective && !!f.brief.shared.persona && !!f.brief.shared.message;
+    if (f.step === 5) {
+      // Objective is always sourced from Step 1 — sync it automatically before checking
+      f.brief.shared.objective = f.objective || f.brief.shared.objective;
+      return !!f.brief.shared.persona && !!f.brief.shared.message;
+    }
     if (f.step === 6) return !f.batchGenerating && f.generatedAssets.length > 0;
     if (f.step === 7) return !f.editingAssetId && cpApprovedAssets().length > 0;
     if (f.step === 8) return false;
