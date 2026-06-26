@@ -135,6 +135,40 @@ a { text-decoration: none; color: inherit; }
 .evidence-text { font-size: 12px; color: var(--text); line-height: 1.5; }
 .evidence-source { font-size: 10px; color: var(--muted); margin-top: 4px; }
 
+/* Intelligence mode toggle (sidebar bottom) */
+.sidebar-intel-section {
+  margin-top: auto; padding: 14px 14px 4px; border-top: 1px solid var(--border);
+}
+.sidebar-intel-title {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--muted); margin-bottom: 10px;
+}
+.sidebar-intel-options { display: flex; flex-direction: column; gap: 6px; }
+.sib-radio-label {
+  display: flex; align-items: center; gap: 8px; padding: 7px 10px;
+  border-radius: var(--radius-sm); cursor: pointer; font-size: 12px;
+  color: var(--muted); border: 1px solid transparent;
+  transition: all 0.15s;
+}
+.sib-radio-label:hover { background: var(--primary-dim); color: var(--text); }
+.sib-radio-label.active {
+  background: var(--primary-dim); color: var(--text);
+  border-color: rgba(99,102,241,0.3);
+}
+.sib-radio-label input[type="radio"] { display: none; }
+.sib-radio-dot {
+  width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0;
+  border: 2px solid var(--border); display: flex; align-items: center; justify-content: center;
+  transition: border-color 0.15s;
+}
+.sib-radio-label.active .sib-radio-dot {
+  border-color: var(--primary);
+}
+.sib-radio-label.active .sib-radio-dot::after {
+  content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--primary);
+}
+.sib-radio-icon { font-size: 13px; }
+
 /* Approvals (Audio) */
 .approval-rail { display: flex; flex-direction: column; gap: 8px; }
 .approval-step { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; background: var(--card2); border: 1px solid var(--border); }
@@ -193,7 +227,26 @@ a { text-decoration: none; color: inherit; }
 </div>
 
 <script>
-/* ===================== STATE (no browser storage) ===================== */
+/* ===================== SHARED INTELLIGENCE DATA ===================== */
+var CLARITY_SAMPLE_INTELLIGENCE = {
+  brand: 'Hearth Bakery',
+  persona: {
+    name: 'Maya Holloway',
+    seg: 'Local foodie · 28–45 · drives for quality',
+    insight: 'Values authenticity over trends. Responds to process stories and limited-batch urgency.'
+  },
+  market: {
+    whiteSpace: 'Artisan craft vs ghost-kitchen convenience — competitors sell speed, Hearth sells patience.',
+    gap: '68% of food-tech startups shuttered since 2023; artisan bakeries grew 14% CAGR.',
+    trend: 'Slow food · local sourcing · behind-the-scenes content'
+  },
+  consumer: {
+    trigger: 'Fear of missing the batch. Motivator: feeling part of a community, not a transaction.',
+    research: 'Pre-order conversion lifts 34% when ferment process is shown. Peak engagement Sat 8–11am.'
+  }
+};
+
+/* ===================== STATE ===================== */
 var appState = {
   screen: 'create-flow',
   createBrief: {
@@ -202,23 +255,7 @@ var appState = {
     persona: 'Maya Holloway',
     whyNow: 'Seasonal launch · Summer 2026'
   },
-  intelligence: {
-    brand: 'Hearth Bakery',
-    persona: {
-      name: 'Maya Holloway',
-      seg: 'Local foodie · 28–45 · drives for quality',
-      insight: 'Values authenticity over trends. Responds to process stories and limited-batch urgency.'
-    },
-    market: {
-      whiteSpace: 'Artisan craft vs ghost-kitchen convenience — competitors sell speed, Hearth sells patience.',
-      gap: '68% of food-tech startups shuttered since 2023; artisan bakeries grew 14% CAGR.',
-      trend: 'Slow food · local sourcing · behind-the-scenes content'
-    },
-    consumer: {
-      trigger: 'Fear of missing the batch. Motivator: feeling part of a community, not a transaction.',
-      research: 'Pre-order conversion lifts 34% when ferment process is shown. Peak engagement Sat 8–11am.'
-    }
-  }
+  intelligence: JSON.parse(JSON.stringify(CLARITY_SAMPLE_INTELLIGENCE))
 };
 
 function nav(screen) {
@@ -235,7 +272,18 @@ var STUDIO_NAV = [
   { id: 'library',     icon: '&#128203;', label: 'Library' },
 ];
 
+function clarityGetIntelMode() {
+  return localStorage.getItem('clarity_intel_mode') || 'on';
+}
+window.claritySetIntelMode = function(mode) {
+  localStorage.setItem('clarity_intel_mode', mode);
+  appState.intelligence = mode === 'off' ? null : JSON.parse(JSON.stringify(CLARITY_SAMPLE_INTELLIGENCE));
+  renderSidebar();
+  renderContent();
+};
+
 function renderSidebar() {
+  var mode = clarityGetIntelMode();
   var html = '<div class="sidebar-brand">'
     + '<div class="sidebar-brand-name">Clarity</div>'
     + '</div>';
@@ -248,6 +296,22 @@ function renderSidebar() {
             + '<span class="icon">' + item.icon + '</span>' + item.label + '</div>';
     }
   });
+  // Intelligence mode toggle — persists across refresh
+  html += '<div class="sidebar-intel-section">'
+    + '<div class="sidebar-intel-title">Intelligence</div>'
+    + '<div class="sidebar-intel-options">'
+    + '<label class="sib-radio-label' + (mode === 'on' ? ' active' : '') + '" onclick="claritySetIntelMode(\'on\')">'
+    + '<input type="radio" name="clarity_intel" value="on"' + (mode === 'on' ? ' checked' : '') + '>'
+    + '<span class="sib-radio-dot"></span>'
+    + '<span class="sib-radio-icon">&#9679;</span> With Intelligence'
+    + '</label>'
+    + '<label class="sib-radio-label' + (mode === 'off' ? ' active' : '') + '" onclick="claritySetIntelMode(\'off\')">'
+    + '<input type="radio" name="clarity_intel" value="off"' + (mode === 'off' ? ' checked' : '') + '>'
+    + '<span class="sib-radio-dot"></span>'
+    + '<span class="sib-radio-icon">&#9675;</span> Without Intelligence'
+    + '</label>'
+    + '</div>'
+    + '</div>';
   document.getElementById('sidebar').innerHTML = html;
 }
 
@@ -262,6 +326,10 @@ function renderContent() {
 }
 
 function init() {
+  // Apply saved intelligence mode before first render
+  if (clarityGetIntelMode() === 'off') {
+    appState.intelligence = null;
+  }
   var h = window.location.hash;
   if (h && h.startsWith('#/')) {
     var parts = h.slice(2).split('/');

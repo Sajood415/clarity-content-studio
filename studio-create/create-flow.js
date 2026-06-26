@@ -107,11 +107,11 @@ var CreateFlow = (function () {
       return f.imageOpts;
     }
     if (f.modality === 'video') {
-      if (!f.videoOpts) f.videoOpts = { hook: 'Bold claim', pacing: 'Fast cuts', captions: true };
+      if (!f.videoOpts) f.videoOpts = { visualStyle: 'Casual / UGC', captions: true, script: '' };
       return f.videoOpts;
     }
     if (f.modality === 'audio') {
-      if (!f.audioOpts) f.audioOpts = { runLength: 'Standard (25–45 min)', voiceStyle: 'Conversational', musicBed: true };
+      if (!f.audioOpts) f.audioOpts = { voiceStyle: 'Conversational', musicBed: true, script: '' };
       return f.audioOpts;
     }
     if (!f.textOpts) f.textOpts = { length: 'Medium (~120 words)', tone: 'Match brand tone', style: 'Story-led' };
@@ -121,8 +121,16 @@ var CreateFlow = (function () {
     var o = cfModalityOpts(f);
     if (f.modality === 'text') return o.length + ' · ' + o.style + ' · Tone: ' + (o.tone === 'Match brand tone' ? appState.cfPrefs.tones.join(', ') : o.tone);
     if (f.modality === 'image') return (f.aspect || '1:1') + ' · ' + o.styleDir + ' · Overlay ' + (o.textOverlay ? 'on' : 'off');
-    if (f.modality === 'video') return (f.aspect || '9:16') + ' · ' + o.hook + ' · ' + o.pacing + ' · Captions ' + (o.captions ? 'on' : 'off');
-    return o.runLength + ' · ' + o.voiceStyle + (o.musicBed ? ' · Music bed' : '');
+    if (f.modality === 'video') {
+      // Type and duration come from Format step (f.format, f.dims) — single source of truth
+      var vType = f.format || 'Video';
+      var vDur = f.dims || '';
+      return vType + (vDur ? ' · ' + vDur : '') + ' · ' + (f.aspect || '9:16') + ' · ' + o.visualStyle + ' · Captions ' + (o.captions ? 'on' : 'off');
+    }
+    // Audio: type and duration come from Format step
+    var aType = f.format || 'Audio';
+    var aDur = f.dims || '';
+    return aType + (aDur ? ' · ' + aDur : '') + ' · ' + o.voiceStyle + (o.musicBed ? ' · Music bed' : '');
   }
   window.cfSetOpt = function (key, value) {
     var f = cfFlow();
@@ -140,13 +148,17 @@ var CreateFlow = (function () {
     renderContent();
   };
   function cfLoadSampleIntelligence() {
-    appState.intelligence = JSON.parse(JSON.stringify(CF_SAMPLE_INTELLIGENCE));
+    // Use shared global so sidebar radio stays in sync
+    var sample = window.CLARITY_SAMPLE_INTELLIGENCE || CF_SAMPLE_INTELLIGENCE;
+    appState.intelligence = JSON.parse(JSON.stringify(sample));
+    if (window.localStorage) localStorage.setItem('clarity_intel_mode', 'on');
+    if (window.renderSidebar) renderSidebar();
     var b = appState.createBrief;
-    b.persona = CF_SAMPLE_INTELLIGENCE.persona.name;
+    b.persona = sample.persona.name;
     if (!b.goal) b.goal = 'Drive weekend pre-orders';
     if (!b.message) b.message = 'Sourdough Saturday is back — 72-hour cold ferment, stone-baked, limited batch. Craft over convenience.';
     if (!b.whyNow) b.whyNow = 'Seasonal launch · Summer 2026';
-    if (!b.proof) b.proof = CF_SAMPLE_INTELLIGENCE.market.gap;
+    if (!b.proof) b.proof = sample.market.gap;
     if (!b.cta) b.cta = 'Pre-order now — closes Friday at 6 PM.';
   }
   var CF_TEXT_VARS = [
@@ -400,6 +412,7 @@ var CreateFlow = (function () {
     var brandName = hasIntel && intel.brand ? intel.brand : 'Your brand';
     var personaName = hasIntel && intel.persona ? intel.persona.name : (brief.persona || 'your audience');
     var f = cfFlow();
+
     var promptBlock = hasIntel
       ? '<div class="cf-brief-prompt">'
         + '<div class="cf-brief-prompt-icon">\u2736</div>'
@@ -408,31 +421,60 @@ var CreateFlow = (function () {
         + '<div class="cf-brief-prompt-text">\u201CBuild a creative brief for ' + brandName + ' aimed at ' + personaName + '. Use the market gap and consumer trigger from Intelligence, and lead with craft, differentiation, and limited-batch urgency.\u201D</div>'
         + '</div></div>'
       : '';
-    return '<div class="cf-brief-center">'
-      + '<div class="cf-step-title">Write the creative brief</div>'
-      + '<div class="cf-step-sub">' + brandName + ' · lock the strategy your generator will execute</div>'
-      + promptBlock
-      + '<div class="cf-pref-bar cf-brief-pills">'
+
+    var contextBar = '<div class="cf-pref-bar cf-brief-pills">'
       + '<span class="pill pill-muted">' + (f.modality ? cfPrettyModality(f.modality) : 'Type') + '</span>'
       + '<span class="pill pill-muted">' + (f.platform || 'Platform') + '</span>'
       + '<span class="pill pill-muted">' + (f.format || 'Format') + '</span>'
       + '<span style="color:var(--muted);font-size:12px;">Used for all generated variations.</span>'
-      + '</div>'
-      + '<div class="cf-brief-form">'
+      + '</div>';
+
+    // Card 1 — Strategy
+    var card1 = '<div class="cf-brief-card-section">'
+      + '<div class="cf-brief-card-heading">Strategy</div>'
+      + '<div class="cf-brief-card-sub">Define the goal and timing context for this piece of content.</div>'
       + '<div class="cf-brief-row">'
-      + '<div class="cf-field"><label>Campaign objective</label><input value="' + brief.goal + '" placeholder="What measurable outcome do we want?" oninput="appState.createBrief.goal=this.value"><div class="cf-field-help">Example: Drive weekend pre-orders from existing Instagram followers.</div></div>'
-      + '<div class="cf-field"><label>Why this moment</label><input value="' + brief.whyNow + '" placeholder="Why this campaign now?" oninput="appState.createBrief.whyNow=this.value"><div class="cf-field-help">Example: Summer menu launch + Saturday footfall spike.</div></div>'
+      + '<div class="cf-field"><label>Campaign objective</label>'
+      + '<input value="' + (brief.goal || '') + '" placeholder="What measurable outcome do we want?" oninput="appState.createBrief.goal=this.value">'
+      + '<div class="cf-field-help">Example: Drive weekend pre-orders from existing Instagram followers.</div></div>'
+      + '<div class="cf-field"><label>Why this moment</label>'
+      + '<input value="' + (brief.whyNow || '') + '" placeholder="Why this campaign now?" oninput="appState.createBrief.whyNow=this.value">'
+      + '<div class="cf-field-help">Example: Summer menu launch + Saturday footfall spike.</div></div>'
       + '</div>'
-      + '<div class="cf-field"><label>Primary persona</label><select onchange="cfSetPersona(this.value)">'
+      + '</div>';
+
+    // Card 2 — Message
+    var card2 = '<div class="cf-brief-card-section">'
+      + '<div class="cf-brief-card-heading">Message</div>'
+      + '<div class="cf-brief-card-sub">Who you\'re talking to, what to say, and what makes it credible.</div>'
+      + '<div class="cf-field"><label>Primary persona</label>'
+      + '<select onchange="cfSetPersona(this.value)">'
       + ['Maya Holloway', 'Alex Rivera', 'All segments'].map(function (p) {
           return '<option' + (brief.persona === p ? ' selected' : '') + '>' + p + '</option>';
-        }).join('') + '</select><div class="cf-field-help">Who this message should feel written for.</div></div>'
-      + '<div class="cf-field"><label>Core message (single clear sentence)</label>'
-      + '<textarea placeholder="What is the one idea the audience must remember?" oninput="appState.createBrief.message=this.value">' + brief.message + '</textarea><div class="cf-field-help">Keep it sharp: offer + differentiator + urgency.</div></div>'
+        }).join('')
+      + '</select>'
+      + '<div class="cf-field-help">Who this message should feel written for.</div></div>'
+      + '<div class="cf-field"><label>Core message <span class="cf-field-label-note">— single clear sentence</span></label>'
+      + '<textarea placeholder="What is the one idea the audience must remember?" oninput="appState.createBrief.message=this.value">' + (brief.message || '') + '</textarea>'
+      + '<div class="cf-field-help">Keep it sharp: offer + differentiator + urgency.</div></div>'
       + '<div class="cf-brief-row">'
-      + '<div class="cf-field"><label>Proof points</label><input value="' + (brief.proof || '') + '" placeholder="What makes this claim credible?" oninput="appState.createBrief.proof=this.value"><div class="cf-field-help">Ingredients, process, data, social proof.</div></div>'
-      + '<div class="cf-field"><label>Call to action</label><input value="' + (brief.cta || '') + '" placeholder="What exactly should people do next?" oninput="appState.createBrief.cta=this.value"><div class="cf-field-help">Example: Pre-order now. Pickup Saturday 8-11 AM.</div></div>'
+      + '<div class="cf-field"><label>Proof points</label>'
+      + '<input value="' + (brief.proof || '') + '" placeholder="What makes this claim credible?" oninput="appState.createBrief.proof=this.value">'
+      + '<div class="cf-field-help">Ingredients, process, data, social proof.</div></div>'
+      + '<div class="cf-field"><label>Call to action</label>'
+      + '<input value="' + (brief.cta || '') + '" placeholder="What exactly should people do next?" oninput="appState.createBrief.cta=this.value">'
+      + '<div class="cf-field-help">Example: Pre-order now. Pickup Saturday 8–11 AM.</div></div>'
       + '</div>'
+      + '</div>';
+
+    return '<div class="cf-brief-center">'
+      + '<div class="cf-step-title">Write the creative brief</div>'
+      + '<div class="cf-step-sub">' + brandName + ' · lock the strategy your generator will execute</div>'
+      + promptBlock
+      + contextBar
+      + '<div class="cf-brief-cards">'
+      + card1
+      + card2
       + cfCreativeControls(f)
       + '</div>'
       + '</div>';
@@ -464,14 +506,20 @@ var CreateFlow = (function () {
         + cfControlPalette(o.palette)
         + cfControlToggle('textOverlay', 'Text overlay', o.textOverlay);
     } else if (f.modality === 'video') {
-      body = cfControlAspect(f, ['9:16', '1:1', '16:9'])
-        + cfControlSelect('hook', 'Hook style', o.hook, ['Bold claim', 'Question', 'Pattern interrupt', 'Stat drop'])
-        + cfControlSelect('pacing', 'Pacing', o.pacing, ['Fast cuts', 'Steady narrative', 'Calm / ASMR'])
-        + cfControlToggle('captions', 'Burn-in captions', o.captions);
+      // Type and duration are locked by Format step — show read-only, no separate dropdown
+      body = cfControlReadonly('Video type', f.format || '—')
+        + cfControlReadonly('Duration', f.dims || '—')
+        + cfControlAspect(f, ['9:16', '1:1', '16:9'])
+        + cfControlSelect('visualStyle', 'Visual style', o.visualStyle, ['Casual / UGC', 'Cinematic', 'Animated / Motion graphics', 'Documentary BTS'])
+        + cfControlToggle('captions', 'Burn-in captions', o.captions)
+        + cfControlTextarea('script', 'Script or scene description', o.script, 'Key scenes, dialogue, or shot list…');
     } else {
-      body = cfControlSelect('runLength', 'Episode length', o.runLength, ['Short clip (3–5 min)', 'Standard (25–45 min)'])
-        + cfControlSelect('voiceStyle', 'Voice style', o.voiceStyle, ['Conversational', 'Narrated', 'Interview'])
-        + cfControlToggle('musicBed', 'Music bed', o.musicBed);
+      // Type and duration are locked by Format step — show read-only
+      body = cfControlReadonly('Audio type', f.format || '—')
+        + cfControlReadonly('Duration', f.dims || '—')
+        + cfControlSelect('voiceStyle', 'Voice style', o.voiceStyle, ['Conversational', 'Calm', 'Energetic', 'Professional'])
+        + cfControlToggle('musicBed', 'Background music', o.musicBed)
+        + cfControlTextarea('script', 'Script or talking points', o.script, 'Key messages, bullet points, or full script…');
     }
     return '<div class="cf-creative-controls">' + title + '<div class="cf-controls-grid">' + body + '</div></div>';
   }
@@ -496,6 +544,11 @@ var CreateFlow = (function () {
       + '<div style="display:flex;align-items:center;gap:10px;margin-top:2px;">'
       + '<div class="toggle-sw' + (on ? ' on' : '') + '" onclick="cfToggleOpt(\'' + key + '\')"><div class="toggle-knob"></div></div>'
       + '<span style="font-size:12px;color:var(--muted);">' + (on ? 'On' : 'Off') + '</span></div></div>';
+  }
+  function cfControlTextarea(key, label, value, placeholder) {
+    return '<div class="cf-field cf-control cf-control-full"><label>' + label + '</label>'
+      + '<textarea placeholder="' + placeholder + '" oninput="cfSetOpt(\'' + key + '\',this.value)">'
+      + (value || '') + '</textarea></div>';
   }
   function cfControlPalette(selected) {
     var colors = appState.cfPrefs.colors || [];
@@ -585,20 +638,116 @@ var CreateFlow = (function () {
       + '</div>';
   }
 
+  var CF_VAR_PALETTES = [
+    { bg: 'linear-gradient(135deg,#1a1f35 0%,#2d1b4e 100%)', accent: '#a78bfa' },
+    { bg: 'linear-gradient(135deg,#0d2137 0%,#1a3a2e 100%)', accent: '#34d399' },
+    { bg: 'linear-gradient(135deg,#2a1a0e 0%,#1c1c2e 100%)', accent: '#f59e0b' }
+  ];
+  var CF_PLATFORM_META = {
+    LinkedIn:  { color: '#0077b5', icon: 'in', handle: 'Hearth Bakery · 1st',  followers: '4,821 followers' },
+    Instagram: { color: '#e1306c', icon: '&#9679;', handle: '@hearthbakery', followers: '12.3k followers' },
+    Facebook:  { color: '#1877f2', icon: 'f',  handle: 'Hearth Bakery',        followers: '8.1k followers' },
+    X:         { color: '#000000', icon: '&#10005;', handle: '@hearthbakery',   followers: '2.9k followers' },
+    TikTok:    { color: '#010101', icon: '&#9835;', handle: '@hearthbakery',    followers: '31k followers' },
+    YouTube:   { color: '#ff0000', icon: '&#9654;', handle: 'Hearth Bakery',    followers: '6.7k subscribers' },
+    Pinterest: { color: '#e60023', icon: 'P',  handle: 'Hearth Bakery',        followers: '9.4k followers' },
+    Email:     { color: '#6366f1', icon: '&#9993;', handle: 'Newsletter',       followers: '3,200 subscribers' },
+    Spotify:   { color: '#1db954', icon: '&#9654;', handle: 'The Hearth Podcast', followers: '1.2k listeners' },
+    Apple:     { color: '#872ec4', icon: '&#9835;', handle: 'The Hearth Podcast', followers: '890 subscribers' }
+  };
+  var CF_WAVEFORM_SEQS = [
+    [3,5,8,6,9,4,7,10,5,8,6,9,4,7,3,6,8,5,9,7,4,8,6,10,5,7,9,4,6,8],
+    [6,9,4,7,10,5,8,3,9,6,4,8,7,5,10,6,3,8,5,9,7,4,6,9,5,8,3,7,10,4],
+    [4,7,10,5,8,6,9,3,7,5,8,6,10,4,7,9,5,3,8,6,4,9,7,5,10,6,8,3,5,7]
+  ];
+
+  function cfTextPostMockup(v, f) {
+    var pm = CF_PLATFORM_META[f.platform] || CF_PLATFORM_META['LinkedIn'];
+    var avatarIdx = ['A','B','C'].indexOf(v.label);
+    var avatarColors = ['#6366f1','#34d399','#f59e0b'];
+    var av = avatarColors[avatarIdx] || '#6366f1';
+    return '<div class="cf-post-mockup">'
+      + '<div class="cf-post-header" style="border-top:3px solid ' + pm.color + ';">'
+      + '<div class="cf-post-avatar" style="background:' + av + ';">HB</div>'
+      + '<div class="cf-post-meta"><div class="cf-post-name">Hearth Bakery</div><div class="cf-post-handle">' + pm.handle + '</div></div>'
+      + '<div class="cf-post-platform-badge" style="color:' + pm.color + ';">' + pm.icon + '</div>'
+      + '</div>'
+      + '<div class="cf-post-body">' + v.text.replace(/\n/g, '<br>') + '</div>'
+      + '<div class="cf-post-footer">'
+      + '<span class="cf-post-action">&#128077; Like</span>'
+      + '<span class="cf-post-action">&#128172; Comment</span>'
+      + '<span class="cf-post-action">&#8594; Share</span>'
+      + '</div>'
+      + '</div>';
+  }
+
+  function cfImagePostMockup(v, f) {
+    var aspect = f.aspect || '1:1';
+    var thumb = window.StudioImage && StudioImage.renderPreview
+      ? StudioImage.renderPreview(v.theme, aspect, v.headline, false)
+      : '<div class="cf-img-placeholder" style="aspect-ratio:' + aspect.replace(':','/') + ';background:linear-gradient(135deg,#1a1f35,#2d1b4e);"></div>';
+    var pm = CF_PLATFORM_META[f.platform] || CF_PLATFORM_META['Instagram'];
+    return '<div class="cf-image-mockup">'
+      + '<div class="cf-image-mockup-header">'
+      + '<div class="cf-post-avatar" style="background:#6366f1;width:28px;height:28px;font-size:10px;">HB</div>'
+      + '<span class="cf-image-mockup-name">hearthbakery</span>'
+      + '<span class="cf-image-mockup-badge" style="color:' + pm.color + ';">' + pm.icon + '</span>'
+      + '</div>'
+      + '<div class="cf-image-mockup-thumb">' + thumb + '</div>'
+      + '<div class="cf-image-mockup-caption">' + (v.headline || '').replace(/<br>/g,' ') + ' — <em>limited batch, pre-order open</em></div>'
+      + '</div>';
+  }
+
+  function cfVideoThumbnailMockup(v, i, f) {
+    var pal = CF_VAR_PALETTES[i] || CF_VAR_PALETTES[0];
+    var aspect = f.aspect || '9:16';
+    var ratio = aspect === '9:16' ? '9/16' : aspect === '1:1' ? '1/1' : '16/9';
+    var maxH = aspect === '9:16' ? '200px' : '140px';
+    return '<div class="cf-video-mockup" style="aspect-ratio:' + ratio + ';max-height:' + maxH + ';background:' + pal.bg + ';">'
+      + '<div class="cf-video-play-btn" style="border-color:' + pal.accent + ';color:' + pal.accent + ';">&#9654;</div>'
+      + '<div class="cf-video-dur-badge">' + v.dur + '</div>'
+      + '<div class="cf-video-caption-bar" style="background:' + pal.accent + '22;">'
+      + '<span style="color:' + pal.accent + ';font-weight:600;">' + v.title + '</span>'
+      + '</div>'
+      + '</div>';
+  }
+
+  function cfAudioWaveformMockup(v, i, f) {
+    var o = cfModalityOpts(f);
+    var bars = CF_WAVEFORM_SEQS[i] || CF_WAVEFORM_SEQS[0];
+    var barHtml = bars.map(function(h, bi) {
+      var delay = (bi * 60) % 900;
+      return '<div class="cf-wave-bar" style="height:' + (h * 4) + 'px;animation-delay:' + delay + 'ms;"></div>';
+    }).join('');
+    return '<div class="cf-audio-mockup">'
+      + '<div class="cf-audio-play">&#9654;</div>'
+      + '<div class="cf-audio-body">'
+      + '<div class="cf-audio-title">' + v.title + '</div>'
+      + '<div class="cf-audio-sub">' + (f.format || 'Audio') + (f.dims ? ' · ' + f.dims : '') + ' · ' + (o.voiceStyle || 'Conversational') + (o.musicBed ? ' · Music' : '') + '</div>'
+      + '<div class="cf-audio-waveform">' + barHtml + '</div>'
+      + '<div class="cf-audio-time"><span class="cf-audio-pos">0:00</span><span class="cf-audio-sep">————</span><span class="cf-audio-dur">' + v.dur + '</span></div>'
+      + '</div>'
+      + '</div>';
+  }
+
   function cfVariationCard(v, i, f) {
-    var body = f.modality === 'text' ? '<div class="variation-card-text">' + v.text.replace(/\n/g, '<br>') + '</div>'
-      : f.modality === 'image' && window.StudioImage && StudioImage.renderPreview
-        ? '<div class="cf-var-thumb">' + StudioImage.renderPreview(v.theme, f.aspect || '1:1', v.headline, false) + '</div>'
-        : f.modality === 'video'
-          ? '<div class="cf-video-thumb">▶</div><div class="cf-var-meta">' + v.title + ' · ' + v.dur + '</div>'
-          : '<div class="cf-var-meta">' + v.title + ' · ' + v.dur + '</div>';
+    var body;
+    if (f.modality === 'text') {
+      body = cfTextPostMockup(v, f);
+    } else if (f.modality === 'image') {
+      body = cfImagePostMockup(v, f);
+    } else if (f.modality === 'video') {
+      body = cfVideoThumbnailMockup(v, i, f);
+    } else {
+      body = cfAudioWaveformMockup(v, i, f);
+    }
     return '<div class="variation-card cf-var-card' + (f.variation === i ? ' selected' : '') + '" onclick="cfSelectVariation(' + i + ')">'
-      + '<div class="flex-between"><span style="font-weight:600;">Variation ' + v.label + '</span>'
+      + '<div class="flex-between" style="margin-bottom:10px;"><span style="font-weight:600;">Variation ' + v.label + '</span>'
       + '<span class="pf-chip ' + cfPfClass(v.pf) + '"><span class="pf-chip-dot"></span>' + v.pf + ' PF' + (v.pf >= 85 ? ' ★' : '') + '</span></div>'
       + body
-      + '<div class="cf-storyboard"><div class="cf-storyboard-label">Storyboard</div><div class="cf-storyboard-text">' + v.storyboard + '</div></div>'
+      + '<div class="cf-storyboard" style="margin-top:10px;"><div class="cf-storyboard-label">Storyboard</div><div class="cf-storyboard-text">' + v.storyboard + '</div></div>'
       + '<div class="cf-rationale"><span>Why</span> ' + v.rationale + '</div>'
-      + '<button class="btn btn-outline btn-sm" style="width:100%;margin-top:8px;" onclick="event.stopPropagation();cfSelectVariation(' + i + ')">' + (f.variation === i ? 'Selected ✓' : 'Select') + '</button></div>';
+      + '<button class="btn btn-outline btn-sm" style="width:100%;margin-top:10px;" onclick="event.stopPropagation();cfSelectVariation(' + i + ')">' + (f.variation === i ? 'Selected ✓' : 'Select') + '</button></div>';
   }
 
   function cfIntelGate() {
@@ -649,22 +798,65 @@ var CreateFlow = (function () {
         + '<div class="platform-preview-sub">' + f.platform + ' · ' + f.format + '</div></div></div>'
         + '<div class="platform-preview-body" contenteditable="true" oninput="cfFlow().editContent=this.innerText">' + text.replace(/\n/g, '<br>') + '</div></div>';
     }
-    if (f.modality === 'image' && window.StudioImage && StudioImage.renderPreview) {
-      return banner + '<div class="cf-step-title">Edit your visual</div><div class="cf-step-sub">Click headline to edit · brand kit applied</div>' + storyStrip
+    if (f.modality === 'image') {
+      var imgPreview = (window.StudioImage && StudioImage.renderPreview)
+        ? StudioImage.renderPreview(v.theme, f.aspect || '1:1', v.headline, true)
+        : '<div class="cf-img-placeholder" style="aspect-ratio:' + (f.aspect || '1:1').replace(':', '/') + ';background:linear-gradient(135deg,#1a1f35,#2d1b4e);border-radius:var(--radius);"></div>';
+      var captionVal = f.editCaption != null ? f.editCaption : (v.headline ? v.headline.replace(/<br>/g, ' ') : '');
+      var altVal = f.editAlt != null ? f.editAlt : '';
+      return banner + '<div class="cf-step-title">Edit your visual</div><div class="cf-step-sub">Headline preview · add caption and alt text for publishing</div>' + storyStrip
         + cfBriefSignalBar(true)
-        + '<div class="cf-edit-canvas">' + StudioImage.renderPreview(v.theme, f.aspect || '1:1', v.headline, true) + '</div>';
+        + '<div class="cf-edit-image-layout">'
+        + '<div class="cf-edit-canvas">' + imgPreview + '</div>'
+        + '<div class="cf-edit-fields">'
+        + '<div class="cf-field"><label>Caption</label>'
+        + '<textarea oninput="cfFlow().editCaption=this.value">' + captionVal + '</textarea>'
+        + '<div class="cf-field-help">Text that will accompany this image when published.</div></div>'
+        + '<div class="cf-field"><label>Alt text</label>'
+        + '<input value="' + altVal + '" placeholder="Describe the image for accessibility" oninput="cfFlow().editAlt=this.value">'
+        + '<div class="cf-field-help">Improves accessibility and SEO. Keep under 125 characters.</div></div>'
+        + '</div></div>';
     }
     if (f.modality === 'video') {
+      var vidTitle = f.editTitle != null ? f.editTitle : v.title;
+      var vidDesc  = f.editDesc  != null ? f.editDesc  : appState.createBrief.message || '';
+      var vidNotes = f.editNotes != null ? f.editNotes : '';
       return banner + '<div class="cf-step-title">Refine your cut</div><div class="cf-step-sub">' + v.title + ' · ' + v.dur + '</div>' + storyStrip
         + cfBriefSignalBar(true)
+        + '<div class="cf-edit-video-layout">'
         + '<div class="cf-video-player">▶<span>Preview</span></div>'
-        + '<div class="cf-field" style="max-width:480px;margin-top:16px;"><label>Refinement notes</label>'
-        + '<textarea placeholder="Punchier hook, add captions…" oninput="cfFlow().editContent=this.value">' + (f.editContent || '') + '</textarea></div>';
+        + '<div class="cf-edit-fields">'
+        + '<div class="cf-field"><label>Title</label>'
+        + '<input value="' + vidTitle + '" placeholder="Video title for this platform" oninput="cfFlow().editTitle=this.value">'
+        + '<div class="cf-field-help">Shown as the caption or title depending on platform.</div></div>'
+        + '<div class="cf-field"><label>Description / Caption</label>'
+        + '<textarea oninput="cfFlow().editDesc=this.value">' + vidDesc + '</textarea>'
+        + '<div class="cf-field-help">Accompanies the video post. Include hashtags and CTA here.</div></div>'
+        + '<div class="cf-field"><label>Refinement notes <span class="cf-field-label-note">— optional, for your editor</span></label>'
+        + '<textarea placeholder="Punchier hook, add captions, tighten 0:08–0:14…" oninput="cfFlow().editNotes=this.value">' + vidNotes + '</textarea>'
+        + '<div class="cf-field-help">Internal notes for re-cutting or adjusting the generated video.</div></div>'
+        + '</div></div>';
     }
+    // Audio (and final fallback)
+    var epTitle    = f.editTitle      != null ? f.editTitle      : v.title;
+    var showNotes  = f.editShowNotes  != null ? f.editShowNotes  : 'This episode covers ' + (appState.createBrief.message || 'the topic') + '. Key themes: ' + (appState.createBrief.proof || 'craft, quality, authenticity') + '.';
+    var transcript = f.editTranscript != null ? f.editTranscript : '[Auto-generated transcript will appear here after processing. Edit or replace with your own.]';
     return banner + '<div class="cf-step-title">Edit your episode</div><div class="cf-step-sub">' + v.title + ' · ' + v.dur + '</div>' + storyStrip
       + cfBriefSignalBar(true)
-      + '<div class="cf-audio-edit"><div style="font-weight:600;margin-bottom:12px;">Ep 14: ' + appState.createBrief.goal + '</div>'
-      + '<div class="cf-waveform">' + [40,65,55,80,45,70,50,75,60,85,48,72,55,78,62,88].map(function(h){ return '<span style="height:'+h+'%"></span>'; }).join('') + '</div></div>';
+      + '<div class="cf-audio-edit">'
+      + '<div class="cf-waveform">' + [40,65,55,80,45,70,50,75,60,85,48,72,55,78,62,88].map(function(h){ return '<span style="height:'+h+'%"></span>'; }).join('') + '</div>'
+      + '</div>'
+      + '<div class="cf-edit-fields cf-audio-edit-fields">'
+      + '<div class="cf-field"><label>Episode title</label>'
+      + '<input value="' + epTitle + '" placeholder="Episode title" oninput="cfFlow().editTitle=this.value">'
+      + '<div class="cf-field-help">Displayed as the episode name on podcast platforms and feeds.</div></div>'
+      + '<div class="cf-field"><label>Show notes / Description</label>'
+      + '<textarea oninput="cfFlow().editShowNotes=this.value">' + showNotes + '</textarea>'
+      + '<div class="cf-field-help">Published alongside the episode. Include timestamps, links, and CTA.</div></div>'
+      + '<div class="cf-field"><label>Transcript <span class="cf-field-label-note">— optional, for accessibility</span></label>'
+      + '<textarea class="cf-transcript-area" oninput="cfFlow().editTranscript=this.value">' + transcript + '</textarea>'
+      + '<div class="cf-field-help">Full spoken transcript. Improves SEO and accessibility for listeners.</div></div>'
+      + '</div>';
   }
 
   function cfStepPublish() {
